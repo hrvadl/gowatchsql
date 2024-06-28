@@ -86,7 +86,6 @@ func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
 		table.WithRows(m.mapToRows(rows)),
 		table.WithFocused(true),
 		table.WithWidth(m.width-10),
-		table.WithHeight(m.height-10),
 	)
 
 	s := table.DefaultStyles()

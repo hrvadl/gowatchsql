@@ -41,8 +41,9 @@ type Model struct {
 
 	list list.Model
 
-	state State
-	err   error
+	chosen string
+	state  State
+	err    error
 
 	explorerFactory ExplorerFactory
 	explorer        Explorer
@@ -84,6 +85,22 @@ func (m Model) View() string {
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.Type {
+	case tea.KeyEnter:
+		return m.handleSelectItem()
+	default:
+		return m.delegateToList(msg)
+	}
+}
+
+func (m Model) handleSelectItem() (tea.Model, tea.Cmd) {
+	chosen := m.list.SelectedItem().(tableItem)
+	m.chosen = chosen.Table.Name
+	m.list.Title = m.chosen
+	return m, func() tea.Msg { return message.TableChosen{Name: m.chosen} }
+}
+
+func (m Model) delegateToList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	lm, err := m.list.Update(msg)
 	if err != nil {
 		panic("failed to update list")
@@ -121,14 +138,6 @@ func (m Model) handleDSNReady(msg message.DSNReady) (tea.Model, tea.Cmd) {
 	}
 
 	m.state = Ready
-	cmd := m.list.SetItems(newItemsFromTable(tables))
-
-	loadTableCmd := func() tea.Msg {
-		if len(tables) == 0 {
-			return nil
-		}
-		return message.TableChosen{Name: tables[0].Name}
-	}
-
-	return m, tea.Batch(cmd, loadTableCmd)
+	_ = m.list.SetItems(newItemsFromTable(tables))
+	return m.handleSelectItem()
 }
