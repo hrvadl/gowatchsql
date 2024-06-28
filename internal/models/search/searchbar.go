@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
 )
 
@@ -49,9 +50,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	const title = "Input your DSN:"
-	titleStyle := m.newTitleStyles()
-	return titleStyle.Render(title, inputStyles.Render(m.input.View()))
+	const title = "Database"
+	barStyles := m.newBarStyles()
+	titleStyles := m.newTitleStyles()
+	return barStyles.Render(titleStyles.Render(title), inputStyles.Render(m.input.View()))
 }
 
 func (m *Model) Focus() {
@@ -90,9 +92,17 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) newTitleStyles() lipgloss.Style {
+func (m Model) newBarStyles() lipgloss.Style {
 	return lipgloss.
 		NewStyle().
 		Height(m.height).
+		Width(m.width)
+}
+
+func (m Model) newTitleStyles() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder(), false, false, true, false).
+		BorderForeground(color.Border).
+		Bold(true).
 		Width(m.width)
 }

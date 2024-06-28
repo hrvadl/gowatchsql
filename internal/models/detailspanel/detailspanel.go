@@ -60,7 +60,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	s := m.newContainerStyles()
 	headerStyles := m.newHeaderStyles()
-	header := headerStyles.Render(m.chosen)
+	header := headerStyles.Render("Table " + m.chosen)
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, m.table.View()))
 }
 
@@ -86,6 +86,7 @@ func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
 		table.WithRows(m.mapToRows(rows)),
 		table.WithFocused(true),
 		table.WithWidth(m.width-10),
+		table.WithHeight(m.height-10),
 		table.WithStyles(m.newTableStyles()),
 	)
 
@@ -123,17 +124,12 @@ func (m Model) mapToRows(entries []Row) []table.Row {
 }
 
 func (m Model) newHeaderStyles() lipgloss.Style {
-	if m.chosen == "" {
-		return lipgloss.NewStyle()
-	}
-
 	return lipgloss.
 		NewStyle().
-		MarginBottom(1).
-		Padding(0, 1).
 		Width(m.width).
-		AlignHorizontal(lipgloss.Center).
-		Background(color.MainAccent)
+		Bold(true).
+		Border(lipgloss.NormalBorder(), false, false, true, false).
+		BorderForeground(color.Border)
 }
 
 func (m Model) newContainerStyles() lipgloss.Style {

@@ -71,7 +71,7 @@ func (m Model) View() string {
 
 func (m *Model) handleUpdateSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	const (
-		searchBarHeight = 3
+		searchBarHeight = 4
 		infoPanelWidth  = 20
 	)
 

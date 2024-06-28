@@ -17,7 +17,7 @@ const (
 
 var titleStyle = lipgloss.NewStyle().
 	Foreground(color.Text).
-	Background(color.MainAccent)
+	Bold(true)
 
 func NewModel(ef ExplorerFactory) Model {
 	item := list.NewDefaultDelegate()
@@ -76,12 +76,10 @@ func (m Model) View() string {
 		Width(m.width)
 
 	switch m.state {
-	case Ready:
-		return s.Render(m.list.View())
 	case Error:
 		return s.Render(m.err.Error())
 	default:
-		return s.Render()
+		return s.Render(m.list.View())
 	}
 }
 
@@ -97,7 +95,6 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) handleSelectItem() (tea.Model, tea.Cmd) {
 	chosen := m.list.SelectedItem().(tableItem)
 	m.chosen = chosen.Table.Name
-	m.list.Title = m.chosen
 	return m, func() tea.Msg { return message.TableChosen{Name: m.chosen} }
 }
 
@@ -115,6 +112,7 @@ func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
 	m.width = w
 	m.height = h
 	m.list.SetSize(w-3, h)
+	m.list.Styles.TitleBar = m.list.Styles.TitleBar.Width(w)
 	return m, nil
 }
 
@@ -146,6 +144,7 @@ func (m Model) handleDSNReady(msg message.DSNReady) (tea.Model, tea.Cmd) {
 func setupItemStyles(st *list.DefaultItemStyles) {
 	st.SelectedTitle = st.SelectedTitle.Foreground(color.MainAccent).
 		BorderForeground(color.MainAccent)
+
 	st.SelectedDesc = st.SelectedDesc.Foreground(color.SecondaryAccent).
 		BorderForeground(color.MainAccent)
 }
@@ -161,6 +160,12 @@ func newList(item list.ItemDelegate) list.Model {
 
 	l.InfiniteScrolling = true
 	l.Title = defaultTitle
+
+	l.Styles.TitleBar = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(color.Text).
+		Border(lipgloss.NormalBorder(), false, false, true, false).
+		BorderForeground(color.Border)
 
 	return l
 }
