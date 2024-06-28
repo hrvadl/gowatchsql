@@ -15,26 +15,14 @@ const (
 	margin  = 1
 )
 
+var titleStyle = lipgloss.NewStyle().
+	Foreground(color.Text).
+	Background(color.MainAccent)
+
 func NewModel(ef ExplorerFactory) Model {
 	item := list.NewDefaultDelegate()
-	item.Styles.SelectedTitle = item.Styles.SelectedTitle.Foreground(color.MainAccent).
-		BorderForeground(color.MainAccent)
-	item.Styles.SelectedDesc = item.Styles.SelectedDesc.Foreground(color.SecondaryAccent).
-		BorderForeground(color.MainAccent)
-
-	l := list.New([]list.Item{}, item, 0, 0)
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.SetShowPagination(false)
-
-	titleStyle := lipgloss.NewStyle().
-		Foreground(color.Text).
-		Background(color.MainAccent)
-	l.Styles.Title = titleStyle
-
-	l.InfiniteScrolling = true
-	l.Title = "Tables"
-
+	setupItemStyles(&item.Styles)
+	l := newList(item)
 	return Model{
 		state:           Pending,
 		explorerFactory: ef,
@@ -153,4 +141,26 @@ func (m Model) handleDSNReady(msg message.DSNReady) (tea.Model, tea.Cmd) {
 	m.state = Ready
 	_ = m.list.SetItems(newItemsFromTable(tables))
 	return m.handleSelectItem()
+}
+
+func setupItemStyles(st *list.DefaultItemStyles) {
+	st.SelectedTitle = st.SelectedTitle.Foreground(color.MainAccent).
+		BorderForeground(color.MainAccent)
+	st.SelectedDesc = st.SelectedDesc.Foreground(color.SecondaryAccent).
+		BorderForeground(color.MainAccent)
+}
+
+func newList(item list.ItemDelegate) list.Model {
+	const defaultTitle = "Tables"
+
+	l := list.New([]list.Item{}, item, 0, 0)
+	l.SetShowStatusBar(false)
+	l.SetFilteringEnabled(false)
+	l.SetShowPagination(false)
+	l.Styles.Title = titleStyle
+
+	l.InfiniteScrolling = true
+	l.Title = defaultTitle
+
+	return l
 }

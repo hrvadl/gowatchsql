@@ -16,6 +16,8 @@ const (
 	placeholder = "mysql://user:password@(db:3306)/database"
 )
 
+var inputStyles = lipgloss.NewStyle().MarginTop(margin)
+
 func New() Model {
 	input := textinput.New()
 	input.Focus()
@@ -47,13 +49,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	s := lipgloss.
-		NewStyle().
-		Height(m.height).
-		Width(m.width)
-
-	ts := lipgloss.NewStyle().MarginTop(margin).Render(m.input.View())
-	return s.Render("Input your DSN:", ts)
+	const title = "Input your DSN:"
+	titleStyle := m.newTitleStyles()
+	return titleStyle.Render(title, inputStyles.Render(m.input.View()))
 }
 
 func (m *Model) Focus() {
@@ -90,4 +88,11 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.input, cmd = m.input.Update(msg)
 		return m, cmd
 	}
+}
+
+func (m Model) newTitleStyles() lipgloss.Style {
+	return lipgloss.
+		NewStyle().
+		Height(m.height).
+		Width(m.width)
 }

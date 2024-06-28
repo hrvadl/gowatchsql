@@ -58,24 +58,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	s := lipgloss.
-		NewStyle().
-		Height(m.height).
-		Width(m.width).
-		MaxWidth(m.width)
-
-	headerStyles := lipgloss.
-		NewStyle().
-		MarginBottom(1).
-		Padding(0, 1).
-		Width(m.width).
-		AlignHorizontal(lipgloss.Center).
-		Background(color.MainAccent)
+	s := m.newContainerStyles()
+	headerStyles := m.newHeaderStyles()
 	header := headerStyles.Render(m.chosen)
-	if m.chosen == "" {
-		header = ""
-	}
-
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, m.table.View()))
 }
 
@@ -96,25 +81,13 @@ func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
 		return m.handleError(message.Error{Err: err})
 	}
 
-	t := table.New(
+	m.table = table.New(
 		table.WithColumns(m.mapToColumns(cols)),
 		table.WithRows(m.mapToRows(rows)),
 		table.WithFocused(true),
 		table.WithWidth(m.width-10),
+		table.WithStyles(m.newTableStyles()),
 	)
-
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(color.Border).
-		BorderBottom(true).
-		Bold(false)
-	s.Selected = s.Selected.
-		Foreground(color.Text).
-		Background(color.MainAccent).
-		Bold(false)
-	t.SetStyles(s)
-	m.table = t
 
 	return m, nil
 }
@@ -147,4 +120,40 @@ func (m Model) mapToRows(entries []Row) []table.Row {
 	}
 
 	return rows
+}
+
+func (m Model) newHeaderStyles() lipgloss.Style {
+	if m.chosen == "" {
+		return lipgloss.NewStyle()
+	}
+
+	return lipgloss.
+		NewStyle().
+		MarginBottom(1).
+		Padding(0, 1).
+		Width(m.width).
+		AlignHorizontal(lipgloss.Center).
+		Background(color.MainAccent)
+}
+
+func (m Model) newContainerStyles() lipgloss.Style {
+	return lipgloss.
+		NewStyle().
+		Height(m.height).
+		Width(m.width).
+		MaxWidth(m.width)
+}
+
+func (m Model) newTableStyles() table.Styles {
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(color.Border).
+		BorderBottom(true).
+		Bold(false)
+	s.Selected = s.Selected.
+		Foreground(color.Text).
+		Background(color.MainAccent).
+		Bold(false)
+	return s
 }
