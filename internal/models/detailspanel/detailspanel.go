@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
 )
 
@@ -29,6 +30,7 @@ type Model struct {
 	width  int
 	height int
 
+	chosen        string
 	tableExplorer TableExplorer
 	table         table.Model
 
@@ -62,7 +64,19 @@ func (m Model) View() string {
 		Width(m.width).
 		MaxWidth(m.width)
 
-	return s.Render(m.table.View())
+	headerStyles := lipgloss.
+		NewStyle().
+		MarginBottom(1).
+		Padding(0, 1).
+		Width(m.width).
+		AlignHorizontal(lipgloss.Center).
+		Background(color.MainAccent)
+	header := headerStyles.Render(m.chosen)
+	if m.chosen == "" {
+		header = ""
+	}
+
+	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, m.table.View()))
 }
 
 func (m *Model) SetTableExplorer(te TableExplorer) {
@@ -76,6 +90,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
+	m.chosen = msg.Name
 	rows, cols, err := m.tableExplorer.GetAll(msg.Name)
 	if err != nil {
 		return m.handleError(message.Error{Err: err})
@@ -91,12 +106,12 @@ func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
+		BorderForeground(color.Border).
 		BorderBottom(true).
 		Bold(false)
 	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
+		Foreground(color.Text).
+		Background(color.MainAccent).
 		Bold(false)
 	t.SetStyles(s)
 	m.table = t

@@ -1,6 +1,8 @@
 package search
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -63,7 +65,7 @@ func (m *Model) Unfocus() {
 }
 
 func (m Model) Value() string {
-	return m.input.Value()
+	return strings.TrimSpace(m.input.Value())
 }
 
 func (m Model) IsFocused() bool {

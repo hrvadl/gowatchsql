@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
 	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
 )
@@ -15,11 +16,23 @@ const (
 )
 
 func NewModel(ef ExplorerFactory) Model {
-	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	item := list.NewDefaultDelegate()
+	item.Styles.SelectedTitle = item.Styles.SelectedTitle.Foreground(color.MainAccent).
+		BorderForeground(color.MainAccent)
+	item.Styles.SelectedDesc = item.Styles.SelectedDesc.Foreground(color.SecondaryAccent).
+		BorderForeground(color.MainAccent)
+
+	l := list.New([]list.Item{}, item, 0, 0)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.SetShowPagination(false)
 
+	titleStyle := lipgloss.NewStyle().
+		Foreground(color.Text).
+		Background(color.MainAccent)
+	l.Styles.Title = titleStyle
+
+	l.InfiniteScrolling = true
 	l.Title = "Tables"
 
 	return Model{

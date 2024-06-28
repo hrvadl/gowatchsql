@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
 	"github.com/hrvadl/gowatchsql/internal/models/detailspanel"
 	"github.com/hrvadl/gowatchsql/internal/models/infopanel"
@@ -166,9 +167,10 @@ func (m Model) delegateToDetailsPanel(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) getFocusedView() (string, string, string) {
 	bordered := lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder())
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(color.Border)
 	focused := bordered.
-		BorderForeground(lipgloss.Color("69"))
+		BorderForeground(color.MainAccent)
 
 	searchView := m.searchbar.View()
 	infoView := m.infopanel.View()
