@@ -4,6 +4,8 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/hrvadl/gowatchsql/internal/message"
 )
 
 const (
@@ -34,24 +36,30 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin)
+		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin)
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	default:
+		return m, nil
 	}
-	return m, nil
 }
 
 func (m Model) View() string {
 	s := lipgloss.
 		NewStyle().
 		Height(m.height).
-		Width(m.width).
-		Padding(0, padding).
-		Border(lipgloss.NormalBorder())
+		Width(m.width)
 
 	ts := lipgloss.NewStyle().MarginTop(margin).Render(m.input.View())
 	return s.Render("Input your DSN:", ts)
+}
+
+func (m *Model) Focus() {
+	m.input.Focus()
+}
+
+func (m *Model) Unfocus() {
+	m.input.Blur()
 }
 
 func (m Model) Value() string {
@@ -62,20 +70,22 @@ func (m Model) IsFocused() bool {
 	return m.input.Focused()
 }
 
-func (m *Model) handleUpdateSize(w, h int) {
+func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
 	m.width = w
 	m.height = h
+	return m, nil
 }
 
-func (m *Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg.Type {
 	case tea.KeyCtrlC:
 		return nil, tea.Quit
 	case tea.KeyEnter:
-		m.input.Blur()
+		m.Unfocus()
+		return m, func() tea.Msg { return message.DSNReady{DSN: m.Value()} }
 	default:
 		m.input, cmd = m.input.Update(msg)
+		return m, cmd
 	}
-	return *m, cmd
 }

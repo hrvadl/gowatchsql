@@ -1,9 +1,11 @@
 package infopanel
 
 import (
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/hrvadl/gowatchsql/internal/message"
 	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
 )
 
@@ -13,9 +15,17 @@ const (
 )
 
 func NewModel(ef ExplorerFactory) Model {
+	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	l.SetShowStatusBar(false)
+	l.SetFilteringEnabled(false)
+	l.SetShowPagination(false)
+
+	l.Title = "Tables"
+
 	return Model{
 		state:           Pending,
 		explorerFactory: ef,
+		list:            l,
 	}
 }
 
@@ -29,7 +39,7 @@ type Model struct {
 	width  int
 	height int
 
-	tables []sysexplorer.Table
+	list list.Model
 
 	state State
 	err   error
@@ -46,10 +56,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin*3)
-	case DSNReadyMsg:
+	case message.DSNReady:
 		return m.handleDSNReady(msg)
-	case ErrorMsg:
+	case message.Error:
 		return m.handleError(msg)
+	case tea.KeyMsg:
+		return m.handleKeyPress(msg)
 	default:
 		return m, nil
 	}
@@ -59,12 +71,11 @@ func (m Model) View() string {
 	s := lipgloss.
 		NewStyle().
 		Height(m.height).
-		Width(m.width).
-		Border(lipgloss.NormalBorder())
+		Width(m.width)
 
 	switch m.state {
 	case Ready:
-		return s.Render(m.tables[0].Name)
+		return s.Render(m.list.View())
 	case Error:
 		return s.Render(m.err.Error())
 	default:
@@ -72,19 +83,30 @@ func (m Model) View() string {
 	}
 }
 
-func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
-	m.width = w
-	m.height = h
+func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	lm, err := m.list.Update(msg)
+	if err != nil {
+		panic("failed to update list")
+	}
+
+	m.list = lm
 	return m, nil
 }
 
-func (m Model) handleError(msg ErrorMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
+	m.width = w
+	m.height = h
+	m.list.SetSize(w-3, h)
+	return m, nil
+}
+
+func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {
 	m.err = msg.Err
 	m.state = Error
 	return m, nil
 }
 
-func (m Model) handleDSNReady(msg DSNReadyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleDSNReady(msg message.DSNReady) (tea.Model, tea.Cmd) {
 	explorer, err := m.explorerFactory(msg.DSN)
 	if err != nil {
 		m.err = err
@@ -95,10 +117,18 @@ func (m Model) handleDSNReady(msg DSNReadyMsg) (tea.Model, tea.Cmd) {
 	m.explorer = explorer
 	tables, err := m.explorer.GetTables()
 	if err != nil {
-		return m.handleError(ErrorMsg{err})
+		return m.handleError(message.Error{Err: err})
 	}
 
 	m.state = Ready
-	m.tables = tables
-	return m, nil
+	cmd := m.list.SetItems(newItemsFromTable(tables))
+
+	loadTableCmd := func() tea.Msg {
+		if len(tables) == 0 {
+			return nil
+		}
+		return message.TableChosen{Name: tables[0].Name}
+	}
+
+	return m, tea.Batch(cmd, loadTableCmd)
 }
