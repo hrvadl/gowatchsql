@@ -1,0 +1,14 @@
+2024/06/28 14:30:04 INFO got dsn
+2024/06/28 14:31:50 INFO Got DSN DSN=mysql://root:secret@(0.0.0.0:3306)/test
+2024/06/28 14:32:25 INFO Got DSN DSN=mysql://root:secret@(0.0.0.0:3306)/test
+2024/06/28 14:33:08 INFO Got DSN DSN=mysql://root:secret@(0.0.0.0:3306)/test
+2024/06/28 14:33:08 INFO Queried tables err=<nil> tables="[{Name:tblsample Type:BASE TABLE}]"
+2024/06/28 14:33:32 INFO Got DSN DSN=mysql://root:secret@(0.0.0.0:3306)/test
+2024/06/28 14:36:54 INFO Got DSN DSN=mysql://root:secret@(0.0.0.0:3306)/test
+2024/06/28 14:37:23 INFO Got DSN DSN=mysql://root:secret@(0.0.0.0:3306)/test
+2024/06/28 15:21:25 INFO Heights searchbar=3 total=28 info=25
+2024/06/28 15:21:49 INFO Heights searchbar=3 total=28 info=25
+2024/06/28 15:22:12 INFO Heights searchbar=3 total=28 info=25
+2024/06/28 15:22:34 INFO Heights searchbar=3 total=28 info=25
+2024/06/28 15:22:40 INFO Heights searchbar=30 total=28 info=-2
+2024/06/28 15:22:52 INFO Heights searchbar=10 total=28 info=18
