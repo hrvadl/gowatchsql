@@ -1,6 +1,7 @@
 package sysexplorer
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
@@ -13,7 +14,7 @@ func New(dsn string) (*Explorer, error) {
 	case strings.HasPrefix(dsn, "mysql://"):
 		return createMySQL(cleanDBType(dsn))
 	default:
-		return nil, nil
+		return nil, errors.New("not implemented")
 	}
 }
 
