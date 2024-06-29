@@ -296,8 +296,10 @@ func (m Model) getHelpPopupContent() string {
 
 func (m Model) newPopupStyles() lipgloss.Style {
 	return lipgloss.NewStyle().
-		Width(m.width-15).
-		Height(m.height-15).
-		Border(lipgloss.NormalBorder(), true).
+		Width(m.width/2).
+		Height(m.height/2).
+		MaxWidth(120).
+		MaxHeight(120).
+		Border(lipgloss.NormalBorder(), true, true, true, true).
 		BorderForeground(color.MainAccent)
 }
