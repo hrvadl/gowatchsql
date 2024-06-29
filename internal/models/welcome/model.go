@@ -10,6 +10,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/message"
 	"github.com/hrvadl/gowatchsql/internal/models/command"
 	"github.com/hrvadl/gowatchsql/internal/models/mainpanel"
+	"github.com/hrvadl/gowatchsql/pkg/direction"
 	"github.com/hrvadl/gowatchsql/pkg/overlay"
 )
 
@@ -92,7 +93,7 @@ func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 		Width:  msg.Width,
 		Height: searchBarHeight,
 	})
-	m.command = searchbar.(command.Model)
+	m.command = searchbar
 
 	main, mainCmd := m.main.Update(tea.WindowSizeMsg{
 		Width:  msg.Width,
@@ -108,7 +109,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyCtrlC:
 		return nil, tea.Quit
 	case tea.KeyEsc:
-		return m.handleHidePopup()
+		return m.handleEscape(msg)
 	default:
 		return m.handleKeyRunes(msg)
 	}
@@ -118,24 +119,50 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "?":
 		return m.handleShowPopup()
+	case ":":
+		return m.handleImmediateMoveFocus(msg)
 	default:
-		return m.delegateKeyPressHandler(msg)
+		return m.delegateToActive(msg)
+	}
+}
+
+func (m Model) handleImmediateMoveFocus(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch m.state.active {
+	case cmdFocused:
+		return m.delegateToActive(msg)
+	default:
+		return m.handleUnfocusMainPanel()
 	}
 }
 
 func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 	switch m.state.active {
 	case cmdFocused:
-		m.state.active++
-		m, cmd := m.delegateToMainPanel(msg)
-		return m, tea.Batch(cmd)
+		return m.handleFocusMainPanel(msg)
 	case mainFocused:
-		m.state.active--
-		m, cmd := m.delegateToCommand(msg)
-		return m, tea.Batch(cmd)
+		return m.handleFocusCommand(msg)
 	default:
 		return m, nil
 	}
+}
+
+func (m Model) handleFocusCommand(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+	m.state.active = cmdFocused
+	model, cmd := m.delegateToCommand(msg)
+	return model, tea.Batch(cmd)
+}
+
+func (m Model) handleFocusMainPanel(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+	m.state.active = mainFocused
+	model, cmd := m.delegateToMainPanel(msg)
+	return model, tea.Batch(cmd)
+}
+
+func (m Model) handleUnfocusMainPanel() (tea.Model, tea.Cmd) {
+	m.state.active = cmdFocused
+	model, modelCmd := m.delegateToMainPanel(message.MoveFocus{Direction: direction.Away})
+	cmdModel, cmdCmd := model.handleFocusCommand(message.MoveFocus{})
+	return cmdModel, tea.Batch(modelCmd, cmdCmd)
 }
 
 func (m Model) handleShowPopup() (tea.Model, tea.Cmd) {
@@ -143,17 +170,16 @@ func (m Model) handleShowPopup() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) handleHidePopup() (tea.Model, tea.Cmd) {
-	m.state.showModal = false
-	switch m.state.active {
-	case cmdFocused:
-		return m, nil
-	default:
-		return m, nil
+func (m Model) handleEscape(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if !m.state.showModal {
+		return m.delegateToActive(msg)
 	}
+
+	m.state.showModal = false
+	return m, nil
 }
 
-func (m *Model) delegateKeyPressHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *Model) delegateToActive(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.state.active {
 	case cmdFocused:
 		return m.delegateToCommand(msg)
@@ -166,7 +192,7 @@ func (m *Model) delegateKeyPressHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) delegateToCommand(msg tea.Msg) (Model, tea.Cmd) {
 	sb, cmd := m.command.Update(msg)
-	m.command = sb.(command.Model)
+	m.command = sb
 	return m, cmd
 }
 

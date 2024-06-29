@@ -7,6 +7,7 @@ import (
 
 	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
+	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 const (
@@ -53,7 +54,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
-		return m.handleMoveFocus()
+		return m.handleMoveFocus(msg)
 	default:
 		return m, nil
 	}
@@ -70,7 +71,12 @@ func (m Model) Help() string {
 	return "Details help"
 }
 
-func (m Model) handleMoveFocus() (tea.Model, tea.Cmd) {
+func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+	if msg.Direction == direction.Away {
+		m.state.active = false
+		return m, nil
+	}
+
 	m.state.active = !m.state.active
 	return m, nil
 }
@@ -106,7 +112,7 @@ func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
 
 func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {
 	m.err = msg.Err
-	m.state.status = Error
+	m.state.status = errored
 	return m, nil
 }
 
@@ -148,13 +154,14 @@ func (m Model) newContainerStyles() lipgloss.Style {
 		NewStyle().
 		Height(m.height).
 		Width(m.width).
-		MaxWidth(m.width)
+		MaxWidth(m.width).
+		Border(lipgloss.NormalBorder(), true)
 
 	if m.state.active {
-		return base.Border(lipgloss.NormalBorder()).BorderForeground(color.MainAccent)
+		return base.BorderForeground(color.MainAccent)
 	}
 
-	return base.Border(lipgloss.NormalBorder()).BorderForeground(color.Border)
+	return base.BorderForeground(color.Border)
 }
 
 func (m Model) newTableStyles() table.Styles {

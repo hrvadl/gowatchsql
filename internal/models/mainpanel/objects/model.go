@@ -61,14 +61,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case message.MoveFocus:
 		return m.handleMoveFocus(msg)
 	default:
-		return m, nil
+		return m.delegateToActiveModel(msg)
 	}
 }
 
 func (m Model) View() string {
-	return lipgloss.NewStyle().Width(m.width).Height(m.height).Render(
+	return m.newStyles().Render(
 		lipgloss.JoinHorizontal(lipgloss.Left, m.info.View(), m.details.View()),
 	)
+}
+
+func (m Model) Help() string {
+	switch m.state.focused {
+	case infoFocused:
+		return m.info.Help()
+	case detailsFocused:
+		return m.details.Help()
+	default:
+		return "error: unknown view"
+	}
 }
 
 func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
@@ -78,7 +89,8 @@ func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 	case direction.Backwards:
 		return m.backwardsStrategy(msg)
 	default:
-		return m, nil
+		m.state.focused = unfocused
+		return m.delegateToAllModels(msg)
 	}
 }
 
@@ -91,10 +103,8 @@ func (m Model) forwardStrategy(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 		m.state.focused++
 		return m.delegateToAllModels(msg)
 	default:
-		m.state.focused = unfocused
-		unfocusPane := func() tea.Msg { return message.MoveFocus{Direction: direction.Forward} }
-		m, cmds := m.delegateToDetailsModel(msg)
-		return m, tea.Batch(cmds, unfocusPane)
+		m.state.focused = infoFocused
+		return m.delegateToAllModels(msg)
 	}
 }
 
@@ -104,12 +114,10 @@ func (m Model) backwardsStrategy(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 		m.state.focused = detailsFocused
 		return m.delegateToDetailsModel(msg)
 	case infoFocused:
-		m.state.focused = unfocused
-		unfocusPane := func() tea.Msg { return message.MoveFocus{Direction: direction.Backwards} }
-		m, cmds := m.delegateToInfoModel(msg)
-		return m, tea.Batch(cmds, unfocusPane)
+		m.state.focused = detailsFocused
+		return m.delegateToAllModels(msg)
 	default:
-		m.state.focused--
+		m.state.focused = infoFocused
 		return m.delegateToAllModels(msg)
 	}
 }
@@ -179,4 +187,8 @@ func (m Model) delegateToInfoModel(msg tea.Msg) (Model, tea.Cmd) {
 	model, cmd := m.info.Update(msg)
 	m.info = model.(infopanel.Model)
 	return m, cmd
+}
+
+func (m Model) newStyles() lipgloss.Style {
+	return lipgloss.NewStyle().Width(m.width).Height(m.height)
 }

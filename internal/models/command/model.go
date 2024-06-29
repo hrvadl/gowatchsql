@@ -43,7 +43,7 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin)
@@ -57,7 +57,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	const title = "Database"
+	const title = "Command prompt"
 	barStyles := m.newBarStyles()
 	titleStyles := m.newTitleStyles()
 	return barStyles.Render(titleStyles.Render(title), inputStyles.Render(m.input.View()))
@@ -71,7 +71,7 @@ func (m Model) Value() string {
 	return strings.TrimSpace(m.input.Value())
 }
 
-func (m Model) handleFocus() (tea.Model, tea.Cmd) {
+func (m Model) handleFocus() (Model, tea.Cmd) {
 	m.input.Focus()
 	m.state.active = true
 	return m, nil
@@ -83,25 +83,25 @@ func (m Model) handleMoveFocus(to direction.Direction) (Model, tea.Cmd) {
 	return m, func() tea.Msg { return message.MoveFocus{Direction: to} }
 }
 
-func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
+func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
 	m.width = w
 	m.height = h
 	return m, nil
 }
 
-func (m Model) handleKeyEnter() (tea.Model, tea.Cmd) {
+func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 	model, cmd := m.handleMoveFocus(direction.Forward)
 	return model, tea.Batch(cmd,
 		func() tea.Msg { return message.DSNReady{DSN: m.Value()} },
 	)
 }
 
-func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg.Type {
 	case tea.KeyCtrlC:
-		return nil, tea.Quit
-	case tea.KeyTab:
+		return Model{}, tea.Quit
+	case tea.KeyEsc:
 		return m.handleMoveFocus(direction.Forward)
 	case tea.KeyShiftTab:
 		return m.handleMoveFocus(direction.Backwards)

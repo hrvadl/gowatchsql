@@ -1,0 +1,9 @@
+version: "3"
+
+tasks:
+  run:
+    desc: "Run program"
+    cmds:
+      - cmd: rm -rf debug.log
+        ignore_error: true
+      - go run .

@@ -71,7 +71,12 @@ func (m Model) View() string {
 }
 
 func (m Model) Help() string {
-	return "help"
+	switch m.state.active {
+	case objectsActive:
+		return m.objects.Help()
+	default:
+		return "TODO: change me"
+	}
 }
 
 func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {

@@ -8,6 +8,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
 	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
+	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 const (
@@ -64,7 +65,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
-		return m.handleMoveFocus()
+		return m.handleMoveFocus(msg)
 	default:
 		return m, nil
 	}
@@ -81,7 +82,12 @@ func (m Model) View() string {
 	}
 }
 
-func (m Model) handleMoveFocus() (tea.Model, tea.Cmd) {
+func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+	if msg.Direction == direction.Away {
+		m.state.active = false
+		return m, nil
+	}
+
 	m.state.active = !m.state.active
 	return m, nil
 }
@@ -94,6 +100,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter:
 		return m.handleSelectItem()
+	case tea.KeyEsc:
+		return m, nil
 	default:
 		return m.delegateToList(msg)
 	}
