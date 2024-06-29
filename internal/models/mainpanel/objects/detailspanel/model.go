@@ -67,6 +67,10 @@ func (m Model) View() string {
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, m.table.View()))
 }
 
+func (m *Model) SetTableExplorer(te TableExplorer) {
+	m.tableExplorer = te
+}
+
 func (m Model) Help() string {
 	return "Details help"
 }
@@ -79,10 +83,6 @@ func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 
 	m.state.active = !m.state.active
 	return m, nil
-}
-
-func (m *Model) SetTableExplorer(te TableExplorer) {
-	m.tableExplorer = te
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -154,11 +154,11 @@ func (m Model) newContainerStyles() lipgloss.Style {
 		NewStyle().
 		Height(m.height).
 		Width(m.width).
-		MaxWidth(m.width).
-		Border(lipgloss.NormalBorder(), true)
+		Border(lipgloss.NormalBorder())
 
 	if m.state.active {
-		return base.BorderForeground(color.MainAccent)
+		return base.Border(lipgloss.ThickBorder()).
+			BorderForeground(color.MainAccent)
 	}
 
 	return base.BorderForeground(color.Border)

@@ -163,7 +163,8 @@ func (m Model) newStyles() lipgloss.Style {
 		Width(m.width).Border(lipgloss.NormalBorder())
 
 	if m.state.active {
-		return base.BorderForeground(color.MainAccent)
+		return base.Border(lipgloss.ThickBorder()).
+			BorderForeground(color.MainAccent)
 	}
 
 	return base.BorderForeground(color.Border)
