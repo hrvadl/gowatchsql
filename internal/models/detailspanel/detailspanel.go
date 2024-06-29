@@ -60,7 +60,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	s := m.newContainerStyles()
 	headerStyles := m.newHeaderStyles()
-	header := headerStyles.Render("Table " + m.chosen)
+	header := headerStyles.Render(m.newTitle())
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, m.table.View()))
 }
 
@@ -156,4 +156,12 @@ func (m Model) newTableStyles() table.Styles {
 		Background(color.MainAccent).
 		Bold(false)
 	return s
+}
+
+func (m Model) newTitle() string {
+	const base = "Table "
+	if m.chosen == "" {
+		return base + "📃"
+	}
+	return base + m.chosen + " 📃"
 }

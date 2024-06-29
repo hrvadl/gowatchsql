@@ -155,7 +155,7 @@ func setupItemStyles(st *list.DefaultItemStyles) {
 }
 
 func newList(item list.ItemDelegate) list.Model {
-	const defaultTitle = "Tables"
+	const defaultTitle = "Tables 📋"
 
 	l := list.New([]list.Item{}, item, 0, 0)
 	l.SetShowStatusBar(false)
