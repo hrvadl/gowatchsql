@@ -1,4 +1,4 @@
-package search
+package command
 
 import (
 	"strings"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
+	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 const (
@@ -19,18 +20,22 @@ const (
 
 var inputStyles = lipgloss.NewStyle().MarginTop(margin)
 
-func New() Model {
+func NewModel() Model {
 	input := textinput.New()
 	input.Focus()
 	input.Placeholder = placeholder
 	return Model{
 		input: input,
+		state: state{
+			active: true,
+		},
 	}
 }
 
 type Model struct {
 	width  int
 	height int
+	state  state
 	input  textinput.Model
 }
 
@@ -44,6 +49,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin)
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
+	case message.MoveFocus:
+		return m.handleFocus()
 	default:
 		return m, nil
 	}
@@ -60,20 +67,20 @@ func (m Model) Help() string {
 	return "searchbar help"
 }
 
-func (m *Model) Focus() {
-	m.input.Focus()
-}
-
-func (m *Model) Unfocus() {
-	m.input.Blur()
-}
-
 func (m Model) Value() string {
 	return strings.TrimSpace(m.input.Value())
 }
 
-func (m Model) IsFocused() bool {
-	return m.input.Focused()
+func (m Model) handleFocus() (tea.Model, tea.Cmd) {
+	m.input.Focus()
+	m.state.active = true
+	return m, nil
+}
+
+func (m Model) handleMoveFocus(to direction.Direction) (Model, tea.Cmd) {
+	m.input.Blur()
+	m.state.active = false
+	return m, func() tea.Msg { return message.MoveFocus{Direction: to} }
 }
 
 func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
@@ -82,14 +89,24 @@ func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) handleKeyEnter() (tea.Model, tea.Cmd) {
+	model, cmd := m.handleMoveFocus(direction.Forward)
+	return model, tea.Batch(cmd,
+		func() tea.Msg { return message.DSNReady{DSN: m.Value()} },
+	)
+}
+
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg.Type {
 	case tea.KeyCtrlC:
 		return nil, tea.Quit
+	case tea.KeyTab:
+		return m.handleMoveFocus(direction.Forward)
+	case tea.KeyShiftTab:
+		return m.handleMoveFocus(direction.Backwards)
 	case tea.KeyEnter:
-		m.Unfocus()
-		return m, func() tea.Msg { return message.DSNReady{DSN: m.Value()} }
+		return m.handleKeyEnter()
 	default:
 		m.input, cmd = m.input.Update(msg)
 		return m, cmd
@@ -97,10 +114,17 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) newBarStyles() lipgloss.Style {
-	return lipgloss.
+	base := lipgloss.
 		NewStyle().
 		Height(m.height).
-		Width(m.width)
+		Width(m.width).
+		Border(lipgloss.NormalBorder())
+
+	if m.state.active {
+		return base.BorderForeground(color.MainAccent)
+	}
+
+	return base.BorderForeground(color.Border)
 }
 
 func (m Model) newTitleStyles() lipgloss.Style {

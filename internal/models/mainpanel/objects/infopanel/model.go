@@ -25,7 +25,6 @@ func NewModel(ef ExplorerFactory) Model {
 	l := newList(item)
 	l.SetShowHelp(false)
 	return Model{
-		state:           Pending,
 		explorerFactory: ef,
 		list:            l,
 	}
@@ -44,8 +43,7 @@ type Model struct {
 	list list.Model
 
 	chosen string
-	state  State
-	err    error
+	state  state
 
 	explorerFactory ExplorerFactory
 	explorer        Explorer
@@ -58,30 +56,34 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin*3)
+		return m.handleWindowSize(msg.Width-margin*2, msg.Height-margin*3)
 	case message.DSNReady:
 		return m.handleDSNReady(msg)
 	case message.Error:
 		return m.handleError(msg)
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
+	case message.MoveFocus:
+		return m.handleMoveFocus()
 	default:
 		return m, nil
 	}
 }
 
 func (m Model) View() string {
-	s := lipgloss.
-		NewStyle().
-		Height(m.height).
-		Width(m.width)
+	s := m.newStyles()
 
-	switch m.state {
+	switch m.state.status {
 	case Error:
-		return s.Render(m.err.Error())
+		return s.Render(m.state.err.Error())
 	default:
 		return s.Render(m.list.View())
 	}
+}
+
+func (m Model) handleMoveFocus() (tea.Model, tea.Cmd) {
+	m.state.active = !m.state.active
+	return m, nil
 }
 
 func (m Model) Help() string {
@@ -113,7 +115,7 @@ func (m Model) delegateToList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
+func (m Model) handleWindowSize(w, h int) (tea.Model, tea.Cmd) {
 	m.width = w
 	m.height = h
 	m.list.SetSize(w-3, h)
@@ -122,16 +124,16 @@ func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {
-	m.err = msg.Err
-	m.state = Error
+	m.state.err = msg.Err
+	m.state.status = Error
 	return m, nil
 }
 
 func (m Model) handleDSNReady(msg message.DSNReady) (tea.Model, tea.Cmd) {
 	explorer, err := m.explorerFactory(msg.DSN)
 	if err != nil {
-		m.err = err
-		m.state = Error
+		m.state.err = err
+		m.state.status = Error
 		return m, nil
 	}
 
@@ -141,9 +143,22 @@ func (m Model) handleDSNReady(msg message.DSNReady) (tea.Model, tea.Cmd) {
 		return m.handleError(message.Error{Err: err})
 	}
 
-	m.state = Ready
+	m.state.status = ready
 	_ = m.list.SetItems(newItemsFromTable(tables))
 	return m.handleSelectItem()
+}
+
+func (m Model) newStyles() lipgloss.Style {
+	base := lipgloss.
+		NewStyle().
+		Height(m.height).
+		Width(m.width).Border(lipgloss.NormalBorder())
+
+	if m.state.active {
+		return base.BorderForeground(color.MainAccent)
+	}
+
+	return base.BorderForeground(color.Border)
 }
 
 func setupItemStyles(st *list.DefaultItemStyles) {

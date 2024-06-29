@@ -1,5 +1,9 @@
 package message
 
+import (
+	"github.com/hrvadl/gowatchsql/pkg/direction"
+)
+
 type (
 	DSNReady struct {
 		DSN string
@@ -11,5 +15,9 @@ type (
 
 	TableChosen struct {
 		Name string
+	}
+
+	MoveFocus struct {
+		Direction direction.Direction
 	}
 )

@@ -34,7 +34,7 @@ type Model struct {
 	tableExplorer TableExplorer
 	table         table.Model
 
-	state State
+	state state
 	err   error
 }
 
@@ -52,6 +52,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleError(msg)
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
+	case message.MoveFocus:
+		return m.handleMoveFocus()
 	default:
 		return m, nil
 	}
@@ -66,6 +68,11 @@ func (m Model) View() string {
 
 func (m Model) Help() string {
 	return "Details help"
+}
+
+func (m Model) handleMoveFocus() (tea.Model, tea.Cmd) {
+	m.state.active = !m.state.active
+	return m, nil
 }
 
 func (m *Model) SetTableExplorer(te TableExplorer) {
@@ -99,7 +106,7 @@ func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
 
 func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {
 	m.err = msg.Err
-	m.state = Error
+	m.state.status = Error
 	return m, nil
 }
 
@@ -137,11 +144,17 @@ func (m Model) newHeaderStyles() lipgloss.Style {
 }
 
 func (m Model) newContainerStyles() lipgloss.Style {
-	return lipgloss.
+	base := lipgloss.
 		NewStyle().
 		Height(m.height).
 		Width(m.width).
 		MaxWidth(m.width)
+
+	if m.state.active {
+		return base.Border(lipgloss.NormalBorder()).BorderForeground(color.MainAccent)
+	}
+
+	return base.Border(lipgloss.NormalBorder()).BorderForeground(color.Border)
 }
 
 func (m Model) newTableStyles() table.Styles {
