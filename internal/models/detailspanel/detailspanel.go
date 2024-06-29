@@ -64,6 +64,10 @@ func (m Model) View() string {
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, m.table.View()))
 }
 
+func (m Model) Help() string {
+	return "Details help"
+}
+
 func (m *Model) SetTableExplorer(te TableExplorer) {
 	m.tableExplorer = te
 }

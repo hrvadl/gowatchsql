@@ -56,6 +56,10 @@ func (m Model) View() string {
 	return barStyles.Render(titleStyles.Render(title), inputStyles.Render(m.input.View()))
 }
 
+func (m Model) Help() string {
+	return "searchbar help"
+}
+
 func (m *Model) Focus() {
 	m.input.Focus()
 }

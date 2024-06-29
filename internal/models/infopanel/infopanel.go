@@ -23,6 +23,7 @@ func NewModel(ef ExplorerFactory) Model {
 	item := list.NewDefaultDelegate()
 	setupItemStyles(&item.Styles)
 	l := newList(item)
+	l.SetShowHelp(false)
 	return Model{
 		state:           Pending,
 		explorerFactory: ef,
@@ -81,6 +82,10 @@ func (m Model) View() string {
 	default:
 		return s.Render(m.list.View())
 	}
+}
+
+func (m Model) Help() string {
+	return "info help"
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {

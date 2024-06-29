@@ -14,6 +14,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/platform/db"
 	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
 	"github.com/hrvadl/gowatchsql/internal/service/tableexplorer"
+	"github.com/hrvadl/gowatchsql/pkg/overlay"
 )
 
 func NewModel(log *slog.Logger) Model {
@@ -25,10 +26,15 @@ func NewModel(log *slog.Logger) Model {
 	}
 }
 
-type state int
+type focus int
+
+type state struct {
+	focused   focus
+	showModal bool
+}
 
 const (
-	searchFocused state = iota
+	searchFocused focus = iota
 	infoFocused
 	detailsFocused
 )
@@ -39,6 +45,9 @@ type Model struct {
 	detailspanel detailspanel.Model
 	state        state
 
+	height int
+	width  int
+
 	log *slog.Logger
 }
 
@@ -46,6 +55,7 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
+// TODO: add shift+tab
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -66,14 +76,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	searchView, infoView, detailsView := m.getFocusedView()
 	mainPane := lipgloss.JoinHorizontal(lipgloss.Left, infoView, detailsView)
-	return lipgloss.JoinVertical(lipgloss.Top, searchView, mainPane)
+	window := lipgloss.JoinVertical(lipgloss.Top, searchView, mainPane)
+	popupStyles := m.newPopupStyles()
+
+	if m.state.showModal {
+		return overlay.Place(
+			(m.width-popupStyles.GetWidth())/2,
+			(m.height-popupStyles.GetHeight())/2,
+			popupStyles.Render(m.getHelpPopupContent()),
+			window,
+			true,
+		)
+	}
+
+	return window
 }
 
-func (m *Model) handleUpdateSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	const (
 		searchBarHeight = 4
 		infoPanelWidth  = 20
 	)
+
+	m.height = msg.Height
+	m.width = msg.Width
 
 	searchbar, cmd1 := m.searchbar.Update(tea.WindowSizeMsg{
 		Width:  msg.Width,
@@ -96,35 +122,72 @@ func (m *Model) handleUpdateSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmd1, cmd, cmd2)
 }
 
-func (m *Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyCtrlC:
 		return nil, tea.Quit
 	case tea.KeyTab:
-		return m.handleChangeFocus()
+		return m.handleMoveFocusForward()
+	case tea.KeyShiftTab:
+		return m.handleMoveFocusBackwards()
+	case tea.KeyEsc:
+		return m.handleHidePopup()
+	default:
+		return m.handleKeyRunes(msg)
+	}
+}
+
+func (m Model) handleKeyRunes(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "?":
+		return m.handleShowPopup()
 	default:
 		return m.delegateKeyPressHandler(msg)
 	}
 }
 
-func (m Model) handleChangeFocus() (tea.Model, tea.Cmd) {
-	switch m.state {
+func (m Model) handleMoveFocusBackwards() (tea.Model, tea.Cmd) {
+	if m.state.showModal {
+		return m, nil
+	}
+
+	switch m.state.focused {
 	case searchFocused:
-		m.state++
+		m.state.focused = 2
 		m.searchbar.Unfocus()
 	case infoFocused:
-		m.state++
+		m.state.focused--
+		m.searchbar.Focus()
+	case detailsFocused:
+		m.searchbar.Unfocus()
+		m.state.focused--
+	}
+
+	return m, nil
+}
+
+func (m Model) handleMoveFocusForward() (tea.Model, tea.Cmd) {
+	if m.state.showModal {
+		return m, nil
+	}
+
+	switch m.state.focused {
+	case searchFocused:
+		m.state.focused++
+		m.searchbar.Unfocus()
+	case infoFocused:
+		m.state.focused++
 		m.searchbar.Unfocus()
 	case detailsFocused:
 		m.searchbar.Focus()
-		m.state = 0
+		m.state.focused = 0
 	}
 
 	return m, nil
 }
 
 func (m *Model) delegateKeyPressHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch m.state {
+	switch m.state.focused {
 	case searchFocused:
 		return m.delegateToSearchbar(msg)
 	case infoFocused:
@@ -145,6 +208,24 @@ func (m *Model) delegateKeyPressHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	m.searchbar = search
 	return m, cmd
+}
+
+func (m Model) handleShowPopup() (tea.Model, tea.Cmd) {
+	m.state.showModal = true
+	m.searchbar.Unfocus()
+	return m, nil
+}
+
+func (m Model) handleHidePopup() (tea.Model, tea.Cmd) {
+	m.state.showModal = false
+
+	switch m.state.focused {
+	case searchFocused:
+		m.searchbar.Focus()
+		return m, nil
+	default:
+		return m, nil
+	}
 }
 
 func (m Model) delegateToSearchbar(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -176,7 +257,13 @@ func (m Model) getFocusedView() (string, string, string) {
 	infoView := m.infopanel.View()
 	detailsView := m.detailspanel.View()
 
-	switch m.state {
+	if m.state.showModal {
+		return bordered.Render(searchView),
+			bordered.Render(infoView),
+			bordered.Render(detailsView)
+	}
+
+	switch m.state.focused {
 	case searchFocused:
 		searchView = focused.Render(searchView)
 		infoView = bordered.Render(infoView)
@@ -192,4 +279,25 @@ func (m Model) getFocusedView() (string, string, string) {
 	}
 
 	return searchView, infoView, detailsView
+}
+
+func (m Model) getHelpPopupContent() string {
+	switch m.state.focused {
+	case searchFocused:
+		return m.searchbar.Help()
+	case infoFocused:
+		return m.infopanel.Help()
+	case detailsFocused:
+		return m.detailspanel.Help()
+	default:
+		return ""
+	}
+}
+
+func (m Model) newPopupStyles() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Width(m.width-15).
+		Height(m.height-15).
+		Border(lipgloss.NormalBorder(), true).
+		BorderForeground(color.MainAccent)
 }
