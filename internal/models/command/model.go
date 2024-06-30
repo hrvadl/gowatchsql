@@ -16,7 +16,7 @@ import (
 const (
 	padding     = 1
 	margin      = 1
-	placeholder = "mysql://user:password@(db:3306)/database"
+	placeholder = "tables"
 )
 
 var inputStyles = lipgloss.NewStyle().MarginTop(margin)
@@ -93,7 +93,10 @@ func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 	m.input.Blur()
 	m.state.active = false
-	return m, func() tea.Msg { return message.Command{Text: command.Command(m.Value())} }
+	val := m.Value()
+	m.input.SetValue("")
+	m.input.Placeholder = val
+	return m, func() tea.Msg { return message.Command{Text: command.Command(val)} }
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {

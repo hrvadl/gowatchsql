@@ -176,9 +176,9 @@ func (m Model) handleFocusMainPanel(msg message.MoveFocus) (Model, tea.Cmd) {
 
 func (m Model) handleUnfocusMainPanel() (Model, tea.Cmd) {
 	m.state.active = cmdFocused
-	model, modelCmd := m.delegateToMainPanel(message.MoveFocus{Direction: direction.Away})
-	cmdModel, cmdCmd := model.handleFocusCommand(message.MoveFocus{})
-	return cmdModel, tea.Batch(modelCmd, cmdCmd)
+	m, mainCmd := m.delegateToMainPanel(message.MoveFocus{Direction: direction.Away})
+	m, cmdCmd := m.handleFocusCommand(message.MoveFocus{})
+	return m, tea.Batch(mainCmd, cmdCmd)
 }
 
 func (m Model) handleShowPopup() (Model, tea.Cmd) {

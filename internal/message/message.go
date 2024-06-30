@@ -6,6 +6,8 @@ import (
 )
 
 type (
+	CleanCommandLine struct{}
+
 	BlockCommandLine struct{}
 
 	UnblockCommandLine struct{}
