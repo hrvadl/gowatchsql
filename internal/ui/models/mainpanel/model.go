@@ -3,12 +3,12 @@ package mainpanel
 import (
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/hrvadl/gowatchsql/internal/command"
-	"github.com/hrvadl/gowatchsql/internal/message"
-	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/contexts"
-	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/contexts/newcontext"
-	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/objects"
-	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/queryrun"
+	"github.com/hrvadl/gowatchsql/internal/ui/command"
+	"github.com/hrvadl/gowatchsql/internal/ui/message"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts/newcontext"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/queryrun"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 

@@ -5,8 +5,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/hrvadl/gowatchsql/internal/models/logger"
-	"github.com/hrvadl/gowatchsql/internal/models/welcome"
+	"github.com/hrvadl/gowatchsql/internal/logger"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/welcome"
 )
 
 func main() {

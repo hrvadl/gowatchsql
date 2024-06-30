@@ -6,10 +6,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hrvadl/gowatchsql/internal/color"
-	"github.com/hrvadl/gowatchsql/internal/message"
-	"github.com/hrvadl/gowatchsql/internal/models/command"
-	"github.com/hrvadl/gowatchsql/internal/models/mainpanel"
+	"github.com/hrvadl/gowatchsql/internal/ui/color"
+	"github.com/hrvadl/gowatchsql/internal/ui/message"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/command"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 	"github.com/hrvadl/gowatchsql/pkg/overlay"
 )

@@ -4,12 +4,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hrvadl/gowatchsql/internal/message"
-	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/objects/detailspanel"
-	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/objects/infopanel"
 	"github.com/hrvadl/gowatchsql/internal/platform/db"
 	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
 	"github.com/hrvadl/gowatchsql/internal/service/tableexplorer"
+	"github.com/hrvadl/gowatchsql/internal/ui/message"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/detailspanel"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/infopanel"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 

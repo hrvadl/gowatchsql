@@ -1,7 +1,7 @@
 package message
 
 import (
-	"github.com/hrvadl/gowatchsql/internal/command"
+	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 

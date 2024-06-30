@@ -3,7 +3,7 @@ package contexts
 import (
 	"github.com/charmbracelet/bubbles/list"
 
-	"github.com/hrvadl/gowatchsql/internal/message"
+	"github.com/hrvadl/gowatchsql/internal/ui/message"
 )
 
 func newItemFromContext(ctx message.NewContext) list.Item {

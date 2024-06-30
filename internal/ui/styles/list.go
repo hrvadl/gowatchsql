@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hrvadl/gowatchsql/internal/color"
+	"github.com/hrvadl/gowatchsql/internal/ui/color"
 )
 
 var titleStyle = lipgloss.NewStyle().

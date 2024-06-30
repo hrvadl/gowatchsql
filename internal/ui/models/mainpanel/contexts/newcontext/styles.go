@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hrvadl/gowatchsql/internal/color"
+	"github.com/hrvadl/gowatchsql/internal/ui/color"
 )
 
 func newForm() (*huh.Form, huh.Field, huh.Field, *huh.Confirm) {
