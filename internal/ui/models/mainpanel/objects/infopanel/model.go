@@ -1,6 +1,7 @@
 package infopanel
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -37,8 +38,7 @@ type Model struct {
 
 	list list.Model
 
-	chosen string
-	state  state
+	state state
 
 	explorerFactory ExplorerFactory
 	explorer        Explorer
@@ -52,14 +52,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.handleWindowSize(msg.Width-margin*2, msg.Height-margin*2)
-	case message.SelectedDB:
-		return m.handleSelectedDB(msg)
+	case message.SelectedContext:
+		return m.handleSelectedContext(msg)
 	case message.Error:
 		return m.handleError(msg)
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
 		return m.handleMoveFocus(msg)
+	case message.FetchedTableList:
+		return m.handleFetchedTableList(msg)
 	default:
 		return m, nil
 	}
@@ -68,8 +70,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	s := m.newStyles()
 	switch m.state.status {
-	case Error:
+	case errored:
 		return s.Render(m.state.err.Error())
+	case loading:
+		return s.Render("Loading...")
 	default:
 		return s.Render(m.list.View())
 	}
@@ -93,8 +97,6 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEnter:
 		return m.handleSelectItem()
-	case tea.KeyEsc:
-		return m, nil
 	default:
 		return m.delegateToList(msg)
 	}
@@ -102,8 +104,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleSelectItem() (tea.Model, tea.Cmd) {
 	chosen := m.list.SelectedItem().(tableItem)
-	m.chosen = chosen.Table.Name
-	return m, func() tea.Msg { return message.TableChosen{Name: m.chosen} }
+	return m, func() tea.Msg { return message.SelectedTable{Name: chosen.Name} }
 }
 
 func (m Model) delegateToList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -122,27 +123,48 @@ func (m Model) handleWindowSize(w, h int) (tea.Model, tea.Cmd) {
 
 func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {
 	m.state.err = msg.Err
-	m.state.status = Error
+	m.state.status = errored
 	return m, nil
 }
 
-func (m Model) handleSelectedDB(msg message.SelectedDB) (tea.Model, tea.Cmd) {
+func (m Model) handleFetchedTableList(msg message.FetchedTableList) (Model, tea.Cmd) {
+	m.state.status = ready
+	items := newItemsFromTable(msg.Tables)
+	cmd := m.list.SetItems(items)
+	return m, tea.Batch(cmd, m.commandSelectTable(msg.Tables))
+}
+
+func (m Model) handleSelectedContext(msg message.SelectedContext) (tea.Model, tea.Cmd) {
 	explorer, err := m.explorerFactory(msg.DSN)
 	if err != nil {
 		m.state.err = err
-		m.state.status = Error
+		m.state.status = errored
 		return m, nil
 	}
 
 	m.explorer = explorer
-	tables, err := m.explorer.GetTables()
-	if err != nil {
-		return m.handleError(message.Error{Err: err})
+	m.state.status = loading
+	return m, m.commandFetchTables
+}
+
+func (m Model) commandSelectTable(tables []sysexplorer.Table) tea.Cmd {
+	if len(tables) == 0 {
+		return nil
 	}
 
-	m.state.status = ready
-	_ = m.list.SetItems(newItemsFromTable(tables))
-	return m.handleSelectItem()
+	return func() tea.Msg {
+		return message.SelectedTable{Name: tables[0].Name}
+	}
+}
+
+func (m *Model) commandFetchTables() tea.Msg {
+	tables, err := m.explorer.GetTables()
+	if err != nil {
+		m.state.status = errored
+		return message.Error{Err: err}
+	}
+
+	return message.FetchedTableList{Tables: tables}
 }
 
 func (m Model) newStyles() lipgloss.Style {
@@ -168,6 +190,7 @@ func newList(item list.ItemDelegate) list.Model {
 	l.InfiniteScrolling = true
 	l.Styles = styles.NewForList()
 	l.Title = defaultTitle
+	l.KeyMap.Quit = key.NewBinding(key.WithDisabled())
 
 	return l
 }

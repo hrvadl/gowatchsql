@@ -52,10 +52,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.handleWindowSize(msg)
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
-	case message.SelectedDB:
-		return m.delegateToInfoModel(msg)
-	case message.TableChosen:
+	case message.SelectedTable:
 		return m.handleTableChosen(msg)
+	case message.FetchedTableContent:
+		return m.delegateToDetailsModel(msg)
+	case message.SelectedContext, message.FetchedTableList:
+		return m.delegateToInfoModel(msg)
 	case message.Error:
 		return m.handleError(msg)
 	case message.MoveFocus:
@@ -153,7 +155,7 @@ func (m Model) handleWindowSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	return m, tea.Batch(infoCmd, detailsCmd)
 }
 
-func (m Model) handleTableChosen(msg message.TableChosen) (Model, tea.Cmd) {
+func (m Model) handleTableChosen(msg message.SelectedTable) (Model, tea.Cmd) {
 	m.details.SetTableExplorer(tableexplorer.New(db.Get()))
 	return m.delegateToDetailsModel(msg)
 }

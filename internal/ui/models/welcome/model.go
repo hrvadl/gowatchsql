@@ -51,9 +51,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case message.MoveFocus:
 		return m.handleMoveFocus(msg)
-	case message.Command:
+	case message.Command, message.FetchedTableList, message.FetchedTableContent, message.SelectedTable:
 		return m.delegateToMainPanel(msg)
-	case message.SelectedDB, message.TableChosen:
+	case message.SelectedContext:
 		return m.delegateToAll(msg)
 	case message.BlockCommandLine:
 		return m.handleBlockCommandLine()
@@ -139,7 +139,6 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) handleImmediateMoveFocus(msg tea.KeyMsg) (Model, tea.Cmd) {
 	if m.state.blockModal {
-		slog.Info("blocking modal")
 		return m.delegateToActive(msg)
 	}
 

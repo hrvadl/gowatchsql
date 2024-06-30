@@ -9,7 +9,8 @@ type state struct {
 type status int
 
 const (
-	pending status = iota
-	Error
+	empty status = iota
+	loading
+	errored
 	ready
 )

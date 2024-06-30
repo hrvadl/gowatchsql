@@ -3,12 +3,13 @@ package detailspanel
 type status int
 
 type state struct {
-	active   bool
-	status   status
-	showHelp bool
+	active bool
+	status status
 }
 
 const (
-	errored status = iota
+	emtpy status = iota
+	loading
+	errored
 	ready
 )

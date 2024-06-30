@@ -7,7 +7,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 )
 
-func newForm() (*huh.Form, huh.Field, huh.Field, *huh.Confirm) {
+func newForm() *huh.Form {
 	nameInput := huh.NewInput().
 		Key("name").
 		Title("Human-readable name:").
@@ -35,7 +35,7 @@ func newForm() (*huh.Form, huh.Field, huh.Field, *huh.Confirm) {
 		),
 	).WithTheme(newHuhTheme()).WithShowHelp(false)
 
-	return form, nameInput, dsnInput, confirm
+	return form
 }
 
 func newHuhTheme() *huh.Theme {
@@ -43,8 +43,7 @@ func newHuhTheme() *huh.Theme {
 		Form: lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(color.Border),
-		Group: lipgloss.NewStyle().
-			Align(lipgloss.Center),
+		Group: lipgloss.NewStyle(),
 		Blurred: huh.FieldStyles{
 			TextInput: newTextInputStyles(),
 		},

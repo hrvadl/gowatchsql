@@ -1,39 +1,27 @@
 package newcontext
 
 import (
+	"log/slog"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
-	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 const margin = 1
 
 func NewModel() Model {
-	form, name, dsn, confirm := newForm()
-
 	return Model{
-		state: state{
-			active: true,
-		},
-		form:    form,
-		name:    name,
-		dsn:     dsn,
-		confirm: confirm,
+		form: newForm(),
 	}
 }
 
 type Model struct {
 	width  int
 	height int
-	state  state
-
-	form    *huh.Form
-	dsn     huh.Field
-	name    huh.Field
-	confirm huh.Field
+	form   *huh.Form
 }
 
 func (m Model) Init() tea.Cmd {
@@ -41,11 +29,10 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	slog.Info("messages")
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin*2)
-	case message.MoveFocus:
-		return m.handleMoveFocus(msg)
 	default:
 		return m.handleDefault(msg)
 	}
@@ -53,6 +40,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	s := m.newContainerStyles()
+	slog.Info("showing newctx view", "form", m.form.View())
 	return s.Render(m.form.View())
 }
 
@@ -68,6 +56,7 @@ func (m Model) handleDefault(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleFormCompleted() (Model, tea.Cmd) {
+	slog.Info("completed")
 	msg := message.NewContext{
 		Name: m.form.GetString("name"),
 		DSN:  m.form.GetString("dsn"),
@@ -77,17 +66,9 @@ func (m Model) handleFormCompleted() (Model, tea.Cmd) {
 		msg.OK = true
 	}
 
+	m.form.State = huh.StateNormal
+	m.form = newForm()
 	return m, func() tea.Msg { return msg }
-}
-
-func (m Model) handleMoveFocus(msg message.MoveFocus) (Model, tea.Cmd) {
-	switch msg.Direction {
-	case direction.Away:
-		m.state.active = false
-	default:
-		m.state.active = !m.state.active
-	}
-	return m, nil
 }
 
 func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
@@ -99,7 +80,9 @@ func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
 
 func (m Model) delegateToForm(msg tea.Msg) (Model, tea.Cmd) {
 	form, cmd := m.form.Update(msg)
-	m.form = form.(*huh.Form)
+	if f, ok := form.(*huh.Form); ok {
+		m.form = f
+	}
 	return m, cmd
 }
 

@@ -54,7 +54,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
 		return m.handleFocus()
-	case message.SelectedDB:
+	case message.SelectedContext:
 		return m.handleSelectedDB(msg)
 	default:
 		return m, nil
@@ -81,7 +81,7 @@ func (m Model) Value() string {
 	return strings.TrimSpace(m.input.Value())
 }
 
-func (m Model) handleSelectedDB(msg message.SelectedDB) (Model, tea.Cmd) {
+func (m Model) handleSelectedDB(msg message.SelectedContext) (Model, tea.Cmd) {
 	m.currentCtx = msg.Name
 	return m, nil
 }

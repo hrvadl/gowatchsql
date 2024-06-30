@@ -75,7 +75,6 @@ func (m Model) Help() string {
 }
 
 func (m Model) handleNewContext(msg message.NewContext) (Model, tea.Cmd) {
-	slog.Info("new context!!", "ctx", msg)
 	m, cmd := m.handleToggleForm()
 	if !msg.OK {
 		return m, cmd
@@ -112,7 +111,7 @@ func (m Model) handleKeyEnter(msg tea.KeyMsg) (Model, tea.Cmd) {
 	}
 
 	if ctx, ok := m.list.SelectedItem().(ctxItem); ok {
-		return m, func() tea.Msg { return message.SelectedDB{DSN: ctx.Description(), Name: ctx.Title()} }
+		return m, func() tea.Msg { return message.SelectedContext{DSN: ctx.Description(), Name: ctx.Title()} }
 	}
 	return m, nil
 }
@@ -128,6 +127,7 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) handleToggleForm() (Model, tea.Cmd) {
 	m.state.formActive = !m.state.formActive
+	slog.Info("Toggling form", "active", m.state.formActive)
 
 	if m.state.formActive {
 		return m, func() tea.Msg { return message.BlockCommandLine{} }

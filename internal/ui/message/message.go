@@ -1,6 +1,7 @@
 package message
 
 import (
+	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
 	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
@@ -16,7 +17,7 @@ type (
 		Text command.Command
 	}
 
-	SelectedDB struct {
+	SelectedContext struct {
 		Name string
 		DSN  string
 	}
@@ -25,7 +26,16 @@ type (
 		Err error
 	}
 
-	TableChosen struct {
+	FetchedTableList struct {
+		Tables []sysexplorer.Table
+	}
+
+	FetchedTableContent struct {
+		Rows [][]string
+		Cols []string
+	}
+
+	SelectedTable struct {
 		Name string
 	}
 
