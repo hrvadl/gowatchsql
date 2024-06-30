@@ -1,8 +1,6 @@
 package newcontext
 
 import (
-	"log/slog"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -29,10 +27,11 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
-	slog.Info("messages")
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin*2)
+	case tea.KeyMsg:
+		return m.handleKeyMessage(msg)
 	default:
 		return m.handleDefault(msg)
 	}
@@ -41,6 +40,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) View() string {
 	s := m.newContainerStyles()
 	return s.Render(m.form.View())
+}
+
+func (m Model) handleKeyMessage(msg tea.KeyMsg) (Model, tea.Cmd) {
+	switch msg.Type {
+	case tea.KeyEsc:
+		return m.handleFormCompleted()
+	default:
+		return m.handleDefault(msg)
+	}
 }
 
 func (m Model) handleDefault(msg tea.Msg) (Model, tea.Cmd) {
@@ -55,7 +63,6 @@ func (m Model) handleDefault(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleFormCompleted() (Model, tea.Cmd) {
-	slog.Info("completed")
 	msg := message.NewContext{
 		Name: m.form.GetString("name"),
 		DSN:  m.form.GetString("dsn"),
@@ -89,6 +96,5 @@ func (m Model) newContainerStyles() lipgloss.Style {
 	return lipgloss.
 		NewStyle().
 		Height(m.height).
-		Width(m.width).
-		Align(lipgloss.Center)
+		Width(m.width)
 }

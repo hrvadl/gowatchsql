@@ -1,8 +1,6 @@
 package contexts
 
 import (
-	"log/slog"
-
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -127,8 +125,6 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) handleToggleForm() (Model, tea.Cmd) {
 	m.state.formActive = !m.state.formActive
-	slog.Info("Toggling form", "active", m.state.formActive)
-
 	if m.state.formActive {
 		return m, func() tea.Msg { return message.BlockCommandLine{} }
 	}
