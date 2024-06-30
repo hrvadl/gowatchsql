@@ -2,6 +2,7 @@ package detailspanel
 
 import (
 	"log/slog"
+	"math"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -102,12 +103,11 @@ func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
 		table.WithColumns(m.mapToColumns(cols)),
 		table.WithRows(m.mapToRows(rows)),
 		table.WithFocused(true),
-		table.WithWidth(m.width-10),
+		table.WithWidth(m.width-1),
 		table.WithHeight(m.height-10),
 		table.WithStyles(m.newTableStyles()),
 	)
 
-	slog.Info("created table")
 	return m, nil
 }
 
@@ -120,13 +120,19 @@ func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {
 func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
 	m.width = w
 	m.height = h
+	m.table.SetWidth(w - 1)
+	m.table.SetHeight(h - 10)
 	return m, nil
 }
 
 func (m Model) mapToColumns(cols []string) []table.Column {
 	t := make([]table.Column, 0)
+	width := round(m.width, len(cols))
 	for _, v := range cols {
-		t = append(t, table.Column{Title: v, Width: m.width / len(cols)})
+		t = append(t, table.Column{
+			Title: v,
+			Width: width,
+		})
 	}
 	return t
 }
@@ -167,15 +173,16 @@ func (m Model) newContainerStyles() lipgloss.Style {
 
 func (m Model) newTableStyles() table.Styles {
 	s := table.DefaultStyles()
+	s.Cell = s.Cell.MaxWidth(m.width + 1)
 	s.Header = lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(color.Border).
 		BorderBottom(true).
-		Bold(false)
+		Bold(true)
 	s.Selected = s.Selected.
 		Foreground(color.Text).
 		Background(color.MainAccent).
-		Bold(false)
+		Bold(true)
 	return s
 }
 
@@ -185,4 +192,8 @@ func (m Model) newTitle() string {
 		return base + "📃"
 	}
 	return base + m.chosen + " 📃"
+}
+
+func round(i, ii int) int {
+	return int(math.Round(float64(i) / float64(ii)))
 }

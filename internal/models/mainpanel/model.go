@@ -1,8 +1,6 @@
 package mainpanel
 
 import (
-	"log/slog"
-
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/hrvadl/gowatchsql/internal/command"
@@ -42,7 +40,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.delegateToActiveModel(msg)
 	case message.MoveFocus:
-		slog.Info("Moving focus to main panel")
 		return m.delegateToActiveModel(msg)
 	case message.SelectedDB, message.TableChosen:
 		return m.delegateToObjectsModel(msg)

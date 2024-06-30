@@ -1,8 +1,7 @@
 package contexts
 
 import (
-	"log/slog"
-
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -10,14 +9,19 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
 	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/contexts/newcontext"
+	"github.com/hrvadl/gowatchsql/internal/styles"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 const margin = 1
 
 func NewModel() Model {
+	item := list.NewDefaultDelegate()
+	item.Styles = styles.NewForItemDelegate()
+	list := newList(item)
+
 	return Model{
-		list: list.New(nil, list.NewDefaultDelegate(), 0, 0),
+		list: list,
 		state: state{
 			active:     false,
 			formActive: false,
@@ -47,7 +51,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case message.Error:
 		return m.handleError(msg)
 	case message.MoveFocus:
-		slog.Info("received move focus in contexts")
 		return m.handleMoveFocus(msg)
 	case message.NewContext:
 		return m.handleNewContext(msg)
@@ -62,7 +65,7 @@ func (m Model) View() string {
 		return s.Render(m.list.View())
 	}
 
-	return s.Render(m.newCtx.View())
+	return s.Padding(1, 2).Render(m.newCtx.View())
 }
 
 func (m Model) Help() string {
@@ -106,7 +109,7 @@ func (m Model) handleKeyEnter(msg tea.KeyMsg) (Model, tea.Cmd) {
 	}
 
 	if ctx, ok := m.list.SelectedItem().(ctxItem); ok {
-		return m, func() tea.Msg { return message.SelectedDB{DSN: ctx.Description()} }
+		return m, func() tea.Msg { return message.SelectedDB{DSN: ctx.Description(), Name: ctx.Title()} }
 	}
 	return m, nil
 }
@@ -138,7 +141,16 @@ func (m Model) handleWindowSize(w, h int) (Model, tea.Cmd) {
 	m.width = w
 	m.height = h
 	m.list.SetSize(w, h)
-	return m.delegateToNewContextModel(tea.WindowSizeMsg{Height: h, Width: w})
+	m.list.Styles.TitleBar = m.list.Styles.TitleBar.Width(w)
+	msg := tea.WindowSizeMsg{Height: h, Width: w}
+	m, cmd := m.delegateToAll(msg)
+	return m, cmd
+}
+
+func (m Model) delegateToAll(msg tea.Msg) (Model, tea.Cmd) {
+	m, listCmd := m.delegateToList(msg)
+	m, ctxCmd := m.delegateToNewContextModel(msg)
+	return m, tea.Batch(listCmd, ctxCmd)
 }
 
 func (m Model) delegateToActive(msg tea.Msg) (Model, tea.Cmd) {
@@ -174,4 +186,18 @@ func (m Model) newContainerStyles() lipgloss.Style {
 	}
 
 	return base.BorderForeground(color.Border)
+}
+
+func newList(item list.ItemDelegate) list.Model {
+	const defaultTitle = "Contexts"
+
+	l := list.New([]list.Item{}, item, 0, 0)
+	l.SetShowStatusBar(false)
+	l.SetShowPagination(false)
+	l.InfiniteScrolling = true
+	l.Styles = styles.NewForList()
+	l.Title = defaultTitle
+	l.KeyMap.Quit = key.NewBinding(key.WithDisabled())
+
+	return l
 }

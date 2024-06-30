@@ -54,7 +54,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case message.Command:
 		return m.delegateToMainPanel(msg)
 	case message.SelectedDB, message.TableChosen:
-		return m.delegateToMainPanel(msg)
+		return m.delegateToAll(msg)
 	case message.BlockCommandLine:
 		return m.handleBlockCommandLine()
 	case message.UnblockCommandLine:
@@ -193,6 +193,12 @@ func (m Model) handleEscape(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 	m.state.showModal = false
 	return m, nil
+}
+
+func (m Model) delegateToAll(msg tea.Msg) (Model, tea.Cmd) {
+	m, cmdCmd := m.delegateToCommand(msg)
+	m, mainCmd := m.delegateToMainPanel(msg)
+	return m, tea.Batch(cmdCmd, mainCmd)
 }
 
 func (m Model) delegateToActive(msg tea.Msg) (Model, tea.Cmd) {

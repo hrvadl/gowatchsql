@@ -25,6 +25,7 @@ func NewModel() Model {
 	input := textinput.New()
 	input.Focus()
 	input.Placeholder = placeholder
+	input.PromptStyle = lipgloss.NewStyle().Foreground(color.MainAccent)
 	return Model{
 		input: input,
 		state: state{
@@ -34,10 +35,11 @@ func NewModel() Model {
 }
 
 type Model struct {
-	width  int
-	height int
-	state  state
-	input  textinput.Model
+	width      int
+	height     int
+	state      state
+	input      textinput.Model
+	currentCtx string
 }
 
 func (m Model) Init() tea.Cmd {
@@ -52,16 +54,23 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
 		return m.handleFocus()
+	case message.SelectedDB:
+		return m.handleSelectedDB(msg)
 	default:
 		return m, nil
 	}
 }
 
 func (m Model) View() string {
-	const title = "Command prompt"
 	barStyles := m.newBarStyles()
 	titleStyles := m.newTitleStyles()
-	return barStyles.Render(titleStyles.Render(title), inputStyles.Render(m.input.View()))
+
+	title := titleStyles.Render("Command prompt")
+	if m.currentCtx != "" {
+		title = titleStyles.Foreground(color.MainAccent).Render("Context: " + m.currentCtx)
+	}
+
+	return barStyles.Render(title, inputStyles.Render(m.input.View()))
 }
 
 func (m Model) Help() string {
@@ -70,6 +79,11 @@ func (m Model) Help() string {
 
 func (m Model) Value() string {
 	return strings.TrimSpace(m.input.Value())
+}
+
+func (m Model) handleSelectedDB(msg message.SelectedDB) (Model, tea.Cmd) {
+	m.currentCtx = msg.Name
+	return m, nil
 }
 
 func (m Model) handleFocus() (Model, tea.Cmd) {

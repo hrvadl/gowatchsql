@@ -1,8 +1,6 @@
 package infopanel
 
 import (
-	"log/slog"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -10,18 +8,15 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/color"
 	"github.com/hrvadl/gowatchsql/internal/message"
 	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
+	"github.com/hrvadl/gowatchsql/internal/styles"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 const margin = 1
 
-var titleStyle = lipgloss.NewStyle().
-	Foreground(color.Text).
-	Bold(true)
-
 func NewModel(ef ExplorerFactory) Model {
 	item := list.NewDefaultDelegate()
-	setupItemStyles(&item.Styles)
+	item.Styles = styles.NewForItemDelegate()
 	l := newList(item)
 	l.SetShowHelp(false)
 	return Model{
@@ -64,7 +59,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
-		slog.Info("received move focus in infopanel")
 		return m.handleMoveFocus(msg)
 	default:
 		return m, nil
@@ -73,8 +67,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	s := m.newStyles()
-	slog.Info("Info view size", slog.Int("width", m.width), slog.Int("height", m.height))
-
 	switch m.state.status {
 	case Error:
 		return s.Render(m.state.err.Error())
@@ -115,13 +107,9 @@ func (m Model) handleSelectItem() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) delegateToList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	lm, err := m.list.Update(msg)
-	if err != nil {
-		panic("failed to update list")
-	}
-
+	lm, cmd := m.list.Update(msg)
 	m.list = lm
-	return m, nil
+	return m, cmd
 }
 
 func (m Model) handleWindowSize(w, h int) (tea.Model, tea.Cmd) {
@@ -171,31 +159,15 @@ func (m Model) newStyles() lipgloss.Style {
 	return base.BorderForeground(color.Border)
 }
 
-func setupItemStyles(st *list.DefaultItemStyles) {
-	st.SelectedTitle = st.SelectedTitle.Foreground(color.MainAccent).
-		BorderForeground(color.MainAccent)
-
-	st.SelectedDesc = st.SelectedDesc.Foreground(color.SecondaryAccent).
-		BorderForeground(color.MainAccent)
-}
-
 func newList(item list.ItemDelegate) list.Model {
 	const defaultTitle = "Tables 📋"
 
 	l := list.New([]list.Item{}, item, 0, 0)
 	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
 	l.SetShowPagination(false)
-	l.Styles.Title = titleStyle
-
 	l.InfiniteScrolling = true
+	l.Styles = styles.NewForList()
 	l.Title = defaultTitle
-
-	l.Styles.TitleBar = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(color.Text).
-		Border(lipgloss.NormalBorder(), false, false, true, false).
-		BorderForeground(color.Border)
 
 	return l
 }

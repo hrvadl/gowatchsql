@@ -37,9 +37,9 @@ type Model struct {
 	state  state
 
 	form    *huh.Form
-	dsn     *huh.Input
-	name    *huh.Input
-	confirm *huh.Confirm
+	dsn     huh.Field
+	name    huh.Field
+	confirm huh.Field
 }
 
 func (m Model) Init() tea.Cmd {
@@ -76,12 +76,17 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleTab(msg tea.KeyMsg) (Model, tea.Cmd) {
-	m, cmd := m.delegateToForm(msg)
+	if m.state.form.page == confirmationPage {
+		return m, nil
+	}
+
 	switch m.state.form.inputFocused {
 	case nameInputFocused:
+		m, cmd := m.delegateToForm(msg)
 		m.state.form.inputFocused = dsnInputFocused
 		return m, tea.Batch(cmd, m.form.NextField())
 	case dsnInputFocused:
+		m, cmd := m.delegateToForm(msg)
 		m.state.form.inputFocused = nameInputFocused
 		return m, tea.Batch(cmd, m.form.PrevField())
 	default:
@@ -142,6 +147,7 @@ func (m Model) handleMoveFocus(msg message.MoveFocus) (Model, tea.Cmd) {
 func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
 	m.width = w
 	m.height = h
+	m.form = m.form.WithWidth(w).WithHeight(h)
 	return m.delegateToForm(tea.WindowSizeMsg{Height: h, Width: w})
 }
 
@@ -180,34 +186,6 @@ func (m Model) newContainerStyles() lipgloss.Style {
 	return lipgloss.
 		NewStyle().
 		Height(m.height).
-		Width(m.width)
-}
-
-func newForm() (*huh.Form, *huh.Input, *huh.Input, *huh.Confirm) {
-	nameInput := huh.NewInput().
-		Key("name").
-		Title("Human-readable name:")
-	nameInput.Focus()
-
-	dsnInput := huh.NewInput().
-		Key("dsn").
-		Title("DSN")
-
-	confirm := huh.NewConfirm().
-		Key("done").
-		Title("Are you sure?").
-		Affirmative("Yes").
-		Negative("No")
-
-	form := huh.NewForm(
-		huh.NewGroup(
-			nameInput,
-			dsnInput,
-		),
-		huh.NewGroup(
-			confirm,
-		),
-	)
-
-	return form, nameInput, dsnInput, confirm
+		Width(m.width).
+		Align(lipgloss.Center)
 }

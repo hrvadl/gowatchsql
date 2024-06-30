@@ -8,4 +8,5 @@ const (
 	Border          = lipgloss.Color("#4C566A")
 	Text            = lipgloss.Color("#ECEFF4")
 	SecondaryText   = lipgloss.Color("#D8DEE9")
+	Placeholder     = lipgloss.Color("240")
 )

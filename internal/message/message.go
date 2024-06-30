@@ -17,7 +17,8 @@ type (
 	}
 
 	SelectedDB struct {
-		DSN string
+		Name string
+		DSN  string
 	}
 
 	Error struct {
