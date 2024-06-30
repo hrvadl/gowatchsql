@@ -40,7 +40,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	s := m.newContainerStyles()
-	slog.Info("showing newctx view", "form", m.form.View())
 	return s.Render(m.form.View())
 }
 
@@ -68,7 +67,7 @@ func (m Model) handleFormCompleted() (Model, tea.Cmd) {
 
 	m.form.State = huh.StateNormal
 	m.form = newForm()
-	return m, func() tea.Msg { return msg }
+	return m, tea.Batch(m.form.Init(), func() tea.Msg { return msg })
 }
 
 func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
