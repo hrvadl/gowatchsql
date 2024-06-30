@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/hrvadl/gowatchsql/internal/color"
+	"github.com/hrvadl/gowatchsql/internal/command"
 	"github.com/hrvadl/gowatchsql/internal/message"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
@@ -92,7 +93,7 @@ func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 	model, cmd := m.handleMoveFocus(direction.Forward)
 	return model, tea.Batch(cmd,
-		func() tea.Msg { return message.DSNReady{DSN: m.Value()} },
+		func() tea.Msg { return message.Command{Text: command.Command(m.Value())} },
 	)
 }
 

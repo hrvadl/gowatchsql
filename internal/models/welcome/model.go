@@ -22,23 +22,14 @@ func NewModel(log *slog.Logger) Model {
 	}
 }
 
-type focus int
-
-type state struct {
-	active    focus
-	showModal bool
-}
-
-const (
-	cmdFocused focus = iota
-	mainFocused
-)
-
 type Model struct {
 	command command.Model
 	main    mainpanel.Model
 
 	state state
+
+	modalY int
+	modalX int
 
 	height int
 	width  int
@@ -57,9 +48,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case tea.QuitMsg:
-		return nil, tea.Quit
+		return m, tea.Quit
 	case message.MoveFocus:
 		return m.handleMoveFocus(msg)
+	case message.Command:
+		return m.delegateToMainPanel(msg)
 	case message.DSNReady, message.TableChosen:
 		return m.delegateToMainPanel(msg)
 	}
@@ -72,8 +65,8 @@ func (m Model) View() string {
 
 	if m.state.showModal {
 		return overlay.Place(
-			(m.width-popupStyles.GetWidth())/2,
-			(m.height-popupStyles.GetHeight())/2,
+			m.modalX,
+			m.modalY,
 			popupStyles.Render(m.getHelpPopupContent()),
 			window,
 			true,
@@ -83,11 +76,14 @@ func (m Model) View() string {
 	return window
 }
 
-func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	const searchBarHeight = 4
 
 	m.height = msg.Height
 	m.width = msg.Width
+
+	m.modalX = m.width / 4
+	m.modalY = m.height / 4
 
 	searchbar, searchCmd := m.command.Update(tea.WindowSizeMsg{
 		Width:  msg.Width,
@@ -99,15 +95,15 @@ func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
 		Width:  msg.Width,
 		Height: msg.Height - searchBarHeight - 1,
 	})
-	m.main = main.(mainpanel.Model)
+	m.main = main
 
 	return m, tea.Batch(searchCmd, mainCmd)
 }
 
-func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyCtrlC:
-		return nil, tea.Quit
+		return m, tea.Quit
 	case tea.KeyEsc:
 		return m.handleEscape(msg)
 	default:
@@ -115,7 +111,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) handleKeyRunes(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch msg.String() {
 	case "?":
 		return m.handleShowPopup()
@@ -126,7 +122,7 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) handleImmediateMoveFocus(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleImmediateMoveFocus(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch m.state.active {
 	case cmdFocused:
 		return m.delegateToActive(msg)
@@ -135,7 +131,7 @@ func (m Model) handleImmediateMoveFocus(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+func (m Model) handleMoveFocus(msg message.MoveFocus) (Model, tea.Cmd) {
 	switch m.state.active {
 	case cmdFocused:
 		return m.handleFocusMainPanel(msg)
@@ -146,31 +142,31 @@ func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) handleFocusCommand(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+func (m Model) handleFocusCommand(msg message.MoveFocus) (Model, tea.Cmd) {
 	m.state.active = cmdFocused
 	model, cmd := m.delegateToCommand(msg)
 	return model, tea.Batch(cmd)
 }
 
-func (m Model) handleFocusMainPanel(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+func (m Model) handleFocusMainPanel(msg message.MoveFocus) (Model, tea.Cmd) {
 	m.state.active = mainFocused
 	model, cmd := m.delegateToMainPanel(msg)
 	return model, tea.Batch(cmd)
 }
 
-func (m Model) handleUnfocusMainPanel() (tea.Model, tea.Cmd) {
+func (m Model) handleUnfocusMainPanel() (Model, tea.Cmd) {
 	m.state.active = cmdFocused
 	model, modelCmd := m.delegateToMainPanel(message.MoveFocus{Direction: direction.Away})
 	cmdModel, cmdCmd := model.handleFocusCommand(message.MoveFocus{})
 	return cmdModel, tea.Batch(modelCmd, cmdCmd)
 }
 
-func (m Model) handleShowPopup() (tea.Model, tea.Cmd) {
+func (m Model) handleShowPopup() (Model, tea.Cmd) {
 	m.state.showModal = true
 	return m, nil
 }
 
-func (m Model) handleEscape(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleEscape(msg tea.KeyMsg) (Model, tea.Cmd) {
 	if !m.state.showModal {
 		return m.delegateToActive(msg)
 	}
@@ -179,7 +175,7 @@ func (m Model) handleEscape(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *Model) delegateToActive(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) delegateToActive(msg tea.Msg) (Model, tea.Cmd) {
 	switch m.state.active {
 	case cmdFocused:
 		return m.delegateToCommand(msg)
@@ -198,7 +194,7 @@ func (m Model) delegateToCommand(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) delegateToMainPanel(msg tea.Msg) (Model, tea.Cmd) {
 	main, cmd := m.main.Update(msg)
-	m.main = main.(mainpanel.Model)
+	m.main = main
 	return m, cmd
 }
 

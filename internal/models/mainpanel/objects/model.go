@@ -46,7 +46,7 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.handleWindowSize(msg)
@@ -82,7 +82,7 @@ func (m Model) Help() string {
 	}
 }
 
-func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+func (m Model) handleMoveFocus(msg message.MoveFocus) (Model, tea.Cmd) {
 	switch msg.Direction {
 	case direction.Forward:
 		return m.forwardStrategy(msg)
@@ -94,7 +94,7 @@ func (m Model) handleMoveFocus(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) forwardStrategy(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+func (m Model) forwardStrategy(msg message.MoveFocus) (Model, tea.Cmd) {
 	switch m.state.focused {
 	case unfocused:
 		m.state.focused++
@@ -108,7 +108,7 @@ func (m Model) forwardStrategy(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) backwardsStrategy(msg message.MoveFocus) (tea.Model, tea.Cmd) {
+func (m Model) backwardsStrategy(msg message.MoveFocus) (Model, tea.Cmd) {
 	switch m.state.focused {
 	case unfocused:
 		m.state.focused = detailsFocused
@@ -122,7 +122,7 @@ func (m Model) backwardsStrategy(msg message.MoveFocus) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyTab:
 		return m.handleMoveFocus(message.MoveFocus{Direction: direction.Forward})
@@ -133,37 +133,37 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m Model) handleWindowSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleWindowSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	const infoPanelWidth = 20
 	m.width = msg.Width
 	m.height = msg.Height
 
-	info, infoCmd := m.delegateToInfoModel(tea.WindowSizeMsg{
+	m, infoCmd := m.delegateToInfoModel(tea.WindowSizeMsg{
 		Width:  infoPanelWidth,
 		Height: msg.Height,
 	})
 
-	details, detailsCmd := info.delegateToDetailsModel(tea.WindowSizeMsg{
+	m, detailsCmd := m.delegateToDetailsModel(tea.WindowSizeMsg{
 		Width:  msg.Width - infoPanelWidth,
 		Height: msg.Height,
 	})
 
-	return details, tea.Batch(infoCmd, detailsCmd)
+	return m, tea.Batch(infoCmd, detailsCmd)
 }
 
-func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
+func (m Model) handleTableChosen(msg message.TableChosen) (Model, tea.Cmd) {
 	m.details.SetTableExplorer(tableexplorer.New(db.Get()))
 	return m.delegateToDetailsModel(msg)
 }
 
-func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {
+func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) delegateToAllModels(msg tea.Msg) (tea.Model, tea.Cmd) {
-	info, infoCmd := m.delegateToInfoModel(msg)
-	details, detailsCmd := info.delegateToDetailsModel(msg)
-	return details, tea.Batch(infoCmd, detailsCmd)
+func (m Model) delegateToAllModels(msg tea.Msg) (Model, tea.Cmd) {
+	m, infoCmd := m.delegateToInfoModel(msg)
+	m, detailsCmd := m.delegateToDetailsModel(msg)
+	return m, tea.Batch(infoCmd, detailsCmd)
 }
 
 func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
