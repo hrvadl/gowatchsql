@@ -86,6 +86,8 @@ func (m Model) handleCommand(msg message.Command) (Model, tea.Cmd) {
 		m.state.active = contextsActive
 	case command.NewContext:
 		m.state.active = newContextActive
+	case command.Exit:
+		return m, tea.Quit
 	}
 	return m, func() tea.Msg { return message.MoveFocus{Direction: direction.Forward} }
 }

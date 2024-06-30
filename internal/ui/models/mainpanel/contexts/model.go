@@ -1,6 +1,8 @@
 package contexts
 
 import (
+	"log/slog"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -73,6 +75,7 @@ func (m Model) Help() string {
 }
 
 func (m Model) handleNewContext(msg message.NewContext) (Model, tea.Cmd) {
+	slog.Info("new context!!", "ctx", msg)
 	m, cmd := m.handleToggleForm()
 	if !msg.OK {
 		return m, cmd

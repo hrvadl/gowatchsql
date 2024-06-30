@@ -12,12 +12,6 @@ const (
 	confirmationPage
 )
 
-type formState struct {
-	page         focused
-	inputFocused focused
-}
-
 type state struct {
 	active bool
-	form   formState
 }

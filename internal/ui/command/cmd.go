@@ -6,4 +6,5 @@ const (
 	Context    Command = "contexts"
 	Tables     Command = "tables"
 	NewContext Command = "new context"
+	Exit       Command = "exit"
 )
