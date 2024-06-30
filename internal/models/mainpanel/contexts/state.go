@@ -1,5 +1,6 @@
 package contexts
 
 type state struct {
-	active bool
+	active     bool
+	formActive bool
 }

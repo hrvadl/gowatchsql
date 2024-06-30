@@ -52,7 +52,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyCtrlC:
 		return nil, tea.Quit
 	case tea.KeyEnter:
-		return m, func() tea.Msg { return message.DSNReady{DSN: m.Value()} }
+		return m, func() tea.Msg { return message.SelectedDB{DSN: m.Value()} }
 	default:
 		m.input, cmd = m.input.Update(msg)
 		return m, cmd

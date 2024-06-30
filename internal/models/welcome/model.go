@@ -53,10 +53,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleMoveFocus(msg)
 	case message.Command:
 		return m.delegateToMainPanel(msg)
-	case message.DSNReady, message.TableChosen:
+	case message.SelectedDB, message.TableChosen:
 		return m.delegateToMainPanel(msg)
+	case message.BlockCommandLine:
+		return m.handleBlockCommandLine()
+	case message.UnblockCommandLine:
+		return m.handleUnblockCommandLine()
+	default:
+		return m.delegateToActive(msg)
 	}
-	return m, nil
 }
 
 func (m Model) View() string {
@@ -74,6 +79,16 @@ func (m Model) View() string {
 	}
 
 	return window
+}
+
+func (m Model) handleBlockCommandLine() (Model, tea.Cmd) {
+	m.state.blockModal = true
+	return m, nil
+}
+
+func (m Model) handleUnblockCommandLine() (Model, tea.Cmd) {
+	m.state.blockModal = false
+	return m, nil
 }
 
 func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
@@ -123,6 +138,11 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleImmediateMoveFocus(msg tea.KeyMsg) (Model, tea.Cmd) {
+	if m.state.blockModal {
+		slog.Info("blocking modal")
+		return m.delegateToActive(msg)
+	}
+
 	switch m.state.active {
 	case cmdFocused:
 		return m.delegateToActive(msg)

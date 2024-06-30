@@ -6,11 +6,15 @@ import (
 )
 
 type (
+	BlockCommandLine struct{}
+
+	UnblockCommandLine struct{}
+
 	Command struct {
 		Text command.Command
 	}
 
-	DSNReady struct {
+	SelectedDB struct {
 		DSN string
 	}
 
@@ -24,5 +28,11 @@ type (
 
 	MoveFocus struct {
 		Direction direction.Direction
+	}
+
+	NewContext struct {
+		DSN  string
+		Name string
+		OK   bool
 	}
 )

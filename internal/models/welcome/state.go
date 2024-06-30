@@ -8,6 +8,7 @@ const (
 )
 
 type state struct {
-	active    focus
-	showModal bool
+	active     focus
+	showModal  bool
+	blockModal bool
 }

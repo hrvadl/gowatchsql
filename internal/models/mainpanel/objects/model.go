@@ -52,7 +52,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.handleWindowSize(msg)
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
-	case message.DSNReady:
+	case message.SelectedDB:
 		return m.delegateToInfoModel(msg)
 	case message.TableChosen:
 		return m.handleTableChosen(msg)

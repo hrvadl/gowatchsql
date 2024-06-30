@@ -40,7 +40,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.delegateToActiveModel(msg)
 	case message.MoveFocus:
 		return m.delegateToActiveModel(msg)
-	case message.DSNReady, message.TableChosen:
+	case message.SelectedDB, message.TableChosen:
 		return m.delegateToObjectsModel(msg)
 	case message.Command:
 		return m.handleCommand(msg)

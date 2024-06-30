@@ -57,9 +57,9 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		return m.handleWindowSize(msg.Width-margin*2, msg.Height-margin*3)
-	case message.DSNReady:
-		return m.handleDSNReady(msg)
+		return m.handleWindowSize(msg.Width-margin*2, msg.Height-margin*2)
+	case message.SelectedDB:
+		return m.handleSelectedDB(msg)
 	case message.Error:
 		return m.handleError(msg)
 	case tea.KeyMsg:
@@ -137,7 +137,7 @@ func (m Model) handleError(msg message.Error) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) handleDSNReady(msg message.DSNReady) (tea.Model, tea.Cmd) {
+func (m Model) handleSelectedDB(msg message.SelectedDB) (tea.Model, tea.Cmd) {
 	explorer, err := m.explorerFactory(msg.DSN)
 	if err != nil {
 		m.state.err = err

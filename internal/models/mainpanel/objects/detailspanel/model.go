@@ -1,6 +1,8 @@
 package detailspanel
 
 import (
+	"log/slog"
+
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -46,7 +48,7 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin*3)
+		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin*2)
 	case message.TableChosen:
 		return m.handleTableChosen(msg)
 	case message.Error:
@@ -107,6 +109,7 @@ func (m Model) handleTableChosen(msg message.TableChosen) (tea.Model, tea.Cmd) {
 		table.WithStyles(m.newTableStyles()),
 	)
 
+	slog.Info("created table")
 	return m, nil
 }
 
