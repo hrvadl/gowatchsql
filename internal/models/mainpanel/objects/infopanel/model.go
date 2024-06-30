@@ -1,6 +1,8 @@
 package infopanel
 
 import (
+	"log/slog"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -11,10 +13,7 @@ import (
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
-const (
-	padding = 4
-	margin  = 1
-)
+const margin = 1
 
 var titleStyle = lipgloss.NewStyle().
 	Foreground(color.Text).
@@ -65,6 +64,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
+		slog.Info("received move focus in infopanel")
 		return m.handleMoveFocus(msg)
 	default:
 		return m, nil
@@ -73,6 +73,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	s := m.newStyles()
+	slog.Info("Info view size", slog.Int("width", m.width), slog.Int("height", m.height))
 
 	switch m.state.status {
 	case Error:

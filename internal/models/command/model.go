@@ -91,10 +91,9 @@ func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
 }
 
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
-	model, cmd := m.handleMoveFocus(direction.Forward)
-	return model, tea.Batch(cmd,
-		func() tea.Msg { return message.Command{Text: command.Command(m.Value())} },
-	)
+	m.input.Blur()
+	m.state.active = false
+	return m, func() tea.Msg { return message.Command{Text: command.Command(m.Value())} }
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {

@@ -1,6 +1,8 @@
 package contexts
 
 import (
+	"log/slog"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -17,7 +19,7 @@ func NewModel() Model {
 	return Model{
 		list: list.New(nil, list.NewDefaultDelegate(), 0, 0),
 		state: state{
-			active:     true,
+			active:     false,
 			formActive: false,
 		},
 		newCtx: newcontext.NewModel(),
@@ -45,6 +47,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case message.Error:
 		return m.handleError(msg)
 	case message.MoveFocus:
+		slog.Info("received move focus in contexts")
 		return m.handleMoveFocus(msg)
 	case message.NewContext:
 		return m.handleNewContext(msg)

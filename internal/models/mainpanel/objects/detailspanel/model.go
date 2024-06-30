@@ -12,10 +12,7 @@ import (
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
-const (
-	padding = 1
-	margin  = 1
-)
+const margin = 1
 
 func NewModel() Model {
 	return Model{}
@@ -56,6 +53,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
+		slog.Info("received move focus in details")
 		return m.handleMoveFocus(msg)
 	default:
 		return m, nil
@@ -169,7 +167,7 @@ func (m Model) newContainerStyles() lipgloss.Style {
 
 func (m Model) newTableStyles() table.Styles {
 	s := table.DefaultStyles()
-	s.Header = s.Header.
+	s.Header = lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(color.Border).
 		BorderBottom(true).

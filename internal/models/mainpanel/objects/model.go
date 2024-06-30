@@ -88,19 +88,21 @@ func (m Model) handleMoveFocus(msg message.MoveFocus) (Model, tea.Cmd) {
 		return m.forwardStrategy(msg)
 	case direction.Backwards:
 		return m.backwardsStrategy(msg)
-	default:
+	case direction.Away:
 		m.state.focused = unfocused
 		return m.delegateToAllModels(msg)
+	default:
+		return m, nil
 	}
 }
 
 func (m Model) forwardStrategy(msg message.MoveFocus) (Model, tea.Cmd) {
 	switch m.state.focused {
 	case unfocused:
-		m.state.focused++
+		m.state.focused = infoFocused
 		return m.delegateToInfoModel(msg)
 	case infoFocused:
-		m.state.focused++
+		m.state.focused = detailsFocused
 		return m.delegateToAllModels(msg)
 	default:
 		m.state.focused = infoFocused

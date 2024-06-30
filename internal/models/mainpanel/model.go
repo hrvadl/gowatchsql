@@ -1,6 +1,8 @@
 package mainpanel
 
 import (
+	"log/slog"
+
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/hrvadl/gowatchsql/internal/command"
@@ -9,6 +11,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/contexts/newcontext"
 	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/objects"
 	"github.com/hrvadl/gowatchsql/internal/models/mainpanel/queryrun"
+	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 func NewModel() Model {
@@ -39,6 +42,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.delegateToActiveModel(msg)
 	case message.MoveFocus:
+		slog.Info("Moving focus to main panel")
 		return m.delegateToActiveModel(msg)
 	case message.SelectedDB, message.TableChosen:
 		return m.delegateToObjectsModel(msg)
@@ -86,7 +90,7 @@ func (m Model) handleCommand(msg message.Command) (Model, tea.Cmd) {
 	case command.NewContext:
 		m.state.active = newContextActive
 	}
-	return m, nil
+	return m, func() tea.Msg { return message.MoveFocus{Direction: direction.Forward} }
 }
 
 func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
