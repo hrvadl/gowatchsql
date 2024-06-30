@@ -107,6 +107,8 @@ func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 		return m.delegateToObjectsModel(msg)
 	case contextsActive:
 		return m.delegateToContextsModel(msg)
+	case newContextActive:
+		return m.delegateToNewContextsModel(msg)
 	case queryRunActive:
 		return m.delegateToQueryRunModel(msg)
 	default:
