@@ -1,10 +1,23 @@
 package message
 
 import (
+	"fmt"
+	"log/slog"
+
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
 	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
+
+func With(msg tea.Msg) func() tea.Msg {
+	return func() tea.Msg {
+		fmted := fmt.Sprintf("Sending message %T", msg)
+		slog.Debug(fmted, slog.Any("message", msg))
+		return msg
+	}
+}
 
 type (
 	CleanCommandLine struct{}
