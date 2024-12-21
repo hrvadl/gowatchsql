@@ -18,7 +18,7 @@ type Pool struct {
 	opened connection
 }
 
-func (p *Pool) GetOrCreate(ctx context.Context, driver, dsn string) (*sqlx.DB, error) {
+func (p *Pool) Get(ctx context.Context, driver, dsn string) (*sqlx.DB, error) {
 	if p.opened.AlreadyOpened(driver, dsn) {
 		return p.opened.db, nil
 	}
@@ -35,10 +35,6 @@ func (p *Pool) GetOrCreate(ctx context.Context, driver, dsn string) (*sqlx.DB, e
 	p.opened = connection{conn, driver, dsn}
 
 	return p.opened.db, nil
-}
-
-func (p *Pool) Get() *sqlx.DB {
-	return p.opened.db
 }
 
 func (p *Pool) Close() error {

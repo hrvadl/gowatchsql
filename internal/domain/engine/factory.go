@@ -31,7 +31,7 @@ func NewFactory(pool Pool) *Factory {
 }
 
 type Pool interface {
-	GetOrCreate(ctx context.Context, name, dsn string) (*sqlx.DB, error)
+	Get(ctx context.Context, name, dsn string) (*sqlx.DB, error)
 }
 
 type Factory struct {
@@ -55,7 +55,7 @@ func (f *Factory) createPostgres(ctx context.Context, dsn string) (*postgreSQL, 
 		dsn += "?sslmode=disable"
 	}
 
-	db, err := f.pool.GetOrCreate(ctx, postgresqlDB, dsn)
+	db, err := f.pool.Get(ctx, postgresqlDB, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (f *Factory) createMySQL(ctx context.Context, dsn string) (*mySQL, error) {
 		return nil, err
 	}
 
-	db, err := f.pool.GetOrCreate(ctx, mysqlDB, dsn)
+	db, err := f.pool.Get(ctx, mysqlDB, dsn)
 	if err != nil {
 		return nil, err
 	}
