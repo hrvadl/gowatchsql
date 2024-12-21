@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/hrvadl/gowatchsql/internal/service/engine"
+	"github.com/hrvadl/gowatchsql/internal/domain/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts"

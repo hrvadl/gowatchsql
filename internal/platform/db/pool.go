@@ -9,6 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// @TODO: save contexts.
 func NewPool() *Pool {
 	return &Pool{}
 }

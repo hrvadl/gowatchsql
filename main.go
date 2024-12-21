@@ -7,9 +7,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/hrvadl/gowatchsql/internal/logger"
+	"github.com/hrvadl/gowatchsql/internal/domain/engine"
 	"github.com/hrvadl/gowatchsql/internal/platform/db"
-	"github.com/hrvadl/gowatchsql/internal/service/engine"
+	"github.com/hrvadl/gowatchsql/internal/platform/logger"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/welcome"
 )
 
@@ -30,7 +30,6 @@ func main() {
 	}()
 
 	factory := engine.NewFactory(pool)
-
 	p := tea.NewProgram(welcome.NewModel(l, factory))
 
 	slog.SetLogLoggerLevel(slog.LevelDebug)
