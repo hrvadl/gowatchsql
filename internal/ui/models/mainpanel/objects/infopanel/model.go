@@ -29,11 +29,7 @@ func NewModel(ef ExplorerFactory) Model {
 	}
 }
 
-type ExplorerFactory = func(dsn string) (*sysexplorer.Explorer, error)
-
-type Explorer interface {
-	GetTables(context.Context) ([]sysexplorer.Table, error)
-}
+type ExplorerFactory = func(dsn string) (sysexplorer.Explorer, error)
 
 type Model struct {
 	width  int
@@ -44,7 +40,7 @@ type Model struct {
 	state state
 
 	explorerFactory ExplorerFactory
-	explorer        Explorer
+	explorer        sysexplorer.Explorer
 }
 
 func (m Model) Init() tea.Cmd {

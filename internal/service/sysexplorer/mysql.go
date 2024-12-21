@@ -6,26 +6,37 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Explorer struct {
+type mySQL struct {
 	db     *sqlx.DB
 	schema string
 }
 
-type Table struct {
+type mySQLTable struct {
 	Name string `db:"TABLE_NAME"`
 	Type string `db:"TABLE_TYPE"`
 }
 
-func (e *Explorer) GetTables(ctx context.Context) ([]Table, error) {
+func (e *mySQL) GetTables(ctx context.Context) ([]Table, error) {
 	const query = `
 		SELECT TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES 
 		WHERE TABLE_SCHEMA=? 
 	`
 
-	var tables []Table
+	var tables []mySQLTable
 	if err := e.db.SelectContext(ctx, &tables, query, e.schema); err != nil {
 		return nil, err
 	}
 
-	return tables, nil
+	return e.toTables(tables), nil
+}
+
+func (e *mySQL) toTables(tables []mySQLTable) []Table {
+	var result []Table
+	for _, t := range tables {
+		result = append(result, Table{
+			Name:   t.Name,
+			Schema: e.schema,
+		})
+	}
+	return result
 }

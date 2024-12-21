@@ -3,13 +3,28 @@ package db
 import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
-var db *sqlx.DB
+type connection struct {
+	db     *sqlx.DB
+	driver string
+	dsn    string
+}
+
+func (c *connection) AlreadyOpened(driver, dsn string) bool {
+	return c.driver == driver && c.dsn == dsn && c.db != nil
+}
+
+func (c *connection) Close() error {
+	return opened.db.Close()
+}
+
+var opened connection
 
 func New(driver, dsn string) (*sqlx.DB, error) {
-	if db != nil {
-		return db, nil
+	if opened.AlreadyOpened(driver, dsn) {
+		return opened.db, nil
 	}
 
 	conn, err := sqlx.Connect(driver, dsn)
@@ -17,10 +32,11 @@ func New(driver, dsn string) (*sqlx.DB, error) {
 		return nil, err
 	}
 
-	db = conn
-	return db, nil
+	opened = connection{conn, driver, dsn}
+
+	return opened.db, nil
 }
 
 func Get() *sqlx.DB {
-	return db
+	return opened.db
 }

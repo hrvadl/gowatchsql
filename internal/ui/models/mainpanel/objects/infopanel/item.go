@@ -19,5 +19,5 @@ type tableItem struct {
 }
 
 func (i tableItem) Title() string       { return i.Name }
-func (i tableItem) Description() string { return i.Type }
+func (i tableItem) Description() string { return i.Schema }
 func (i tableItem) FilterValue() string { return i.Name }

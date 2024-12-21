@@ -13,6 +13,7 @@ import (
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
+// @TODO: gracefully close connections
 func NewModel() Model {
 	return Model{
 		info:    infopanel.NewModel(sysexplorer.New),
