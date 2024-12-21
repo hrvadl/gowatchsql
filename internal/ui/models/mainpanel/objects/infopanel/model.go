@@ -103,7 +103,11 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleSelectItem() (tea.Model, tea.Cmd) {
-	chosen := m.list.SelectedItem().(tableItem)
+	chosen, ok := m.list.SelectedItem().(tableItem)
+	if !ok {
+		return m, nil
+	}
+
 	return m, func() tea.Msg { return message.SelectedTable{Name: chosen.Name} }
 }
 
