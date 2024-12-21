@@ -1,6 +1,9 @@
 package infopanel
 
 import (
+	"context"
+	"time"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -29,7 +32,7 @@ func NewModel(ef ExplorerFactory) Model {
 type ExplorerFactory = func(dsn string) (*sysexplorer.Explorer, error)
 
 type Explorer interface {
-	GetTables() ([]sysexplorer.Table, error)
+	GetTables(context.Context) ([]sysexplorer.Table, error)
 }
 
 type Model struct {
@@ -162,7 +165,10 @@ func (m Model) commandSelectTable(tables []sysexplorer.Table) tea.Cmd {
 }
 
 func (m *Model) commandFetchTables() tea.Msg {
-	tables, err := m.explorer.GetTables()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	tables, err := m.explorer.GetTables(ctx)
 	if err != nil {
 		m.state.status = errored
 		return message.Error{Err: err}

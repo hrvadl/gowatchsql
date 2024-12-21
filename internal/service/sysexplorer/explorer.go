@@ -1,6 +1,10 @@
 package sysexplorer
 
-import "github.com/jmoiron/sqlx"
+import (
+	"context"
+
+	"github.com/jmoiron/sqlx"
+)
 
 type Explorer struct {
 	db     *sqlx.DB
@@ -12,14 +16,14 @@ type Table struct {
 	Type string `db:"TABLE_TYPE"`
 }
 
-func (e *Explorer) GetTables() ([]Table, error) {
+func (e *Explorer) GetTables(ctx context.Context) ([]Table, error) {
 	const query = `
 		SELECT TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES 
 		WHERE TABLE_SCHEMA=? 
 	`
 
 	var tables []Table
-	if err := e.db.Select(&tables, query, e.schema); err != nil {
+	if err := e.db.SelectContext(ctx, &tables, query, e.schema); err != nil {
 		return nil, err
 	}
 
