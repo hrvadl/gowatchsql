@@ -1,6 +1,8 @@
 package contexts
 
 import (
+	"slices"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -116,11 +118,19 @@ func (m Model) handleKeyEnter(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch msg.String() {
-	case "N":
+	case toggleCreateForm:
 		return m.handleToggleForm()
+	case deleteContext:
+		return m.handleDeleteContext()
 	default:
 		return m.delegateToActive(msg)
 	}
+}
+
+func (m Model) handleDeleteContext() (Model, tea.Cmd) {
+	items := m.list.Items()
+	idx := m.list.Index()
+	return m, m.list.SetItems(slices.Delete(items, idx, idx+1))
 }
 
 func (m Model) handleToggleForm() (Model, tea.Cmd) {

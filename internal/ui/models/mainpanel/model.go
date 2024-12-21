@@ -84,8 +84,6 @@ func (m Model) handleCommand(msg message.Command) (Model, tea.Cmd) {
 		m.state.active = objectsActive
 	case command.Context:
 		m.state.active = contextsActive
-	case command.NewContext:
-		m.state.active = newContextActive
 	case command.Exit:
 		return m, tea.Quit
 	}
