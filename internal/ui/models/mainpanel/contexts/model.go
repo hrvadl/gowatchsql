@@ -120,10 +120,8 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch msg.String() {
 	case toggleCreateForm:
 		return m.handleToggleForm()
-	case deleteContext:
-		return m.handleDeleteContext()
 	default:
-		return m.delegateToActive(msg)
+		return m.delegateKeypress(msg)
 	}
 }
 
@@ -162,13 +160,25 @@ func (m Model) delegateToAll(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(listCmd, ctxCmd)
 }
 
-func (m Model) delegateToActive(msg tea.Msg) (Model, tea.Cmd) {
-	switch m.state.formActive {
-	case true:
+func (m Model) delegateKeypress(msg tea.KeyMsg) (Model, tea.Cmd) {
+	if m.state.formActive {
 		return m.delegateToNewContextModel(msg)
-	default:
-		return m.delegateToList(msg)
 	}
+
+	switch msg.String() {
+	case deleteContext:
+		return m.handleDeleteContext()
+	default:
+		return m.delegateToActive(msg)
+	}
+}
+
+func (m Model) delegateToActive(msg tea.Msg) (Model, tea.Cmd) {
+	if m.state.formActive {
+		return m.delegateToNewContextModel(msg)
+	}
+
+	return m.delegateToList(msg)
 }
 
 func (m Model) delegateToNewContextModel(msg tea.Msg) (Model, tea.Cmd) {
