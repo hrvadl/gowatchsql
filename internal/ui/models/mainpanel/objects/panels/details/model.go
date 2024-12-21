@@ -1,12 +1,15 @@
-package detailspanel
+package details
 
 import (
+	"context"
 	"math"
+	"time"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/hrvadl/gowatchsql/internal/service/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
@@ -14,16 +17,18 @@ import (
 
 const margin = 1
 
-func NewModel() Model {
-	return Model{}
+func NewModel(ef ExplorerFactory) Model {
+	return Model{
+		engineFactory: ef,
+	}
 }
 
 type Column = string
 
 type Row = []string
 
-type TableExplorer interface {
-	GetAll(string) ([]Row, []Column, error)
+type ExplorerFactory interface {
+	Create(dsn string) (engine.Explorer, error)
 }
 
 type Model struct {
@@ -31,7 +36,8 @@ type Model struct {
 	height int
 
 	chosen        string
-	tableExplorer TableExplorer
+	engineFactory ExplorerFactory
+	explorer      engine.Explorer
 	table         table.Model
 
 	state state
@@ -56,6 +62,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleMoveFocus(msg)
 	case message.FetchedTableContent:
 		return m.handleFetchedTableContent(msg)
+	case message.SelectedContext:
+		return m.handleSelectedContext(msg)
 	default:
 		return m, nil
 	}
@@ -75,10 +83,6 @@ func (m Model) View() string {
 	}
 
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, content))
-}
-
-func (m *Model) SetTableExplorer(te TableExplorer) {
-	m.tableExplorer = te
 }
 
 func (m Model) Help() string {
@@ -114,6 +118,20 @@ func (m Model) handleFetchedTableContent(msg message.FetchedTableContent) (Model
 	return m, nil
 }
 
+func (m Model) handleSelectedContext(msg message.SelectedContext) (tea.Model, tea.Cmd) {
+	explorer, err := m.engineFactory.Create(msg.DSN)
+	if err != nil {
+		m.err = err
+		m.state.status = errored
+		return m, nil
+	}
+
+	m.explorer = explorer
+	m.state.status = loading
+
+	return m, nil
+}
+
 func (m Model) handleTableChosen(msg message.SelectedTable) (tea.Model, tea.Cmd) {
 	m.chosen = msg.Name
 	m.state.status = loading
@@ -135,8 +153,11 @@ func (m Model) handleUpdateSize(w, h int) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) commandFetchTableContent(table string) tea.Cmd {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	return func() tea.Msg {
-		rows, cols, err := m.tableExplorer.GetAll(table)
+		defer cancel()
+
+		rows, cols, err := m.explorer.GetRows(ctx, table)
 		if err != nil {
 			m.state.status = errored
 			return message.Error{Err: err}

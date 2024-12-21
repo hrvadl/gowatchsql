@@ -1,4 +1,4 @@
-package sysexplorer
+package engine
 
 import (
 	"context"
@@ -16,7 +16,8 @@ const (
 )
 
 type Explorer interface {
-	GetTables(context.Context) ([]Table, error)
+	GetTables(ctx context.Context) ([]Table, error)
+	GetRows(ctx context.Context, table string) ([]Row, []Column, error)
 }
 
 type Table struct {
@@ -24,7 +25,13 @@ type Table struct {
 	Schema string `db:"TABLE_TYPE"`
 }
 
-func New(dsn string) (Explorer, error) {
+type Factory struct{}
+
+func NewFactory() *Factory {
+	return &Factory{}
+}
+
+func (f *Factory) Create(dsn string) (Explorer, error) {
 	switch {
 	case strings.HasPrefix(dsn, mysqlDB):
 		return newMySQL(cleanDBType(dsn))

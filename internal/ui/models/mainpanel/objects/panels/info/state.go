@@ -1,4 +1,4 @@
-package infopanel
+package info
 
 type state struct {
 	status status

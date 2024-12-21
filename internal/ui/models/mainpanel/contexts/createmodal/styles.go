@@ -1,4 +1,4 @@
-package newcontext
+package createmodal
 
 import (
 	"github.com/charmbracelet/huh"

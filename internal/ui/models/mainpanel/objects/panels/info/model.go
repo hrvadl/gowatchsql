@@ -1,4 +1,4 @@
-package infopanel
+package info
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
+	"github.com/hrvadl/gowatchsql/internal/service/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/styles"
@@ -24,12 +24,14 @@ func NewModel(ef ExplorerFactory) Model {
 	l := newList(item)
 	l.SetShowHelp(false)
 	return Model{
-		explorerFactory: ef,
-		list:            l,
+		engineFactory: ef,
+		list:          l,
 	}
 }
 
-type ExplorerFactory = func(dsn string) (sysexplorer.Explorer, error)
+type ExplorerFactory interface {
+	Create(dsn string) (engine.Explorer, error)
+}
 
 type Model struct {
 	width  int
@@ -39,8 +41,8 @@ type Model struct {
 
 	state state
 
-	explorerFactory ExplorerFactory
-	explorer        sysexplorer.Explorer
+	engineFactory ExplorerFactory
+	explorer      engine.Explorer
 }
 
 func (m Model) Init() tea.Cmd {
@@ -138,7 +140,7 @@ func (m Model) handleFetchedTableList(msg message.FetchedTableList) (Model, tea.
 }
 
 func (m Model) handleSelectedContext(msg message.SelectedContext) (tea.Model, tea.Cmd) {
-	explorer, err := m.explorerFactory(msg.DSN)
+	explorer, err := m.engineFactory.Create(msg.DSN)
 	if err != nil {
 		m.state.err = err
 		m.state.status = errored
@@ -150,7 +152,7 @@ func (m Model) handleSelectedContext(msg message.SelectedContext) (tea.Model, te
 	return m, m.commandFetchTables
 }
 
-func (m Model) commandSelectTable(tables []sysexplorer.Table) tea.Cmd {
+func (m Model) commandSelectTable(tables []engine.Table) tea.Cmd {
 	if len(tables) == 0 {
 		return nil
 	}

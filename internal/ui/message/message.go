@@ -6,7 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
+	"github.com/hrvadl/gowatchsql/internal/service/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
@@ -40,7 +40,7 @@ type (
 	}
 
 	FetchedTableList struct {
-		Tables []sysexplorer.Table
+		Tables []engine.Table
 	}
 
 	FetchedTableContent struct {

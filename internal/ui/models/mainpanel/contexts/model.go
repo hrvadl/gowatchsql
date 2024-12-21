@@ -10,7 +10,7 @@ import (
 
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
-	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts/newcontext"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts/createmodal"
 	"github.com/hrvadl/gowatchsql/internal/ui/styles"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
@@ -28,7 +28,7 @@ func NewModel() Model {
 			active:     false,
 			formActive: false,
 		},
-		newCtx: newcontext.NewModel(),
+		newCtx: createmodal.NewModel(),
 	}
 }
 
@@ -37,7 +37,7 @@ type Model struct {
 	height int
 	list   list.Model
 	state  state
-	newCtx newcontext.Model
+	newCtx createmodal.Model
 }
 
 func (m Model) Init() tea.Cmd {

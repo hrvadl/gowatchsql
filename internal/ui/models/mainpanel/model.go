@@ -6,7 +6,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts"
-	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts/newcontext"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts/createmodal"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/queryrun"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
@@ -16,7 +16,7 @@ func NewModel() Model {
 	return Model{
 		objects:    objects.NewModel(),
 		contexts:   contexts.NewModel(),
-		newContext: newcontext.NewModel(),
+		newContext: createmodal.NewModel(),
 		queryrun:   queryrun.NewModel(),
 	}
 }
@@ -24,7 +24,7 @@ func NewModel() Model {
 type Model struct {
 	objects    objects.Model
 	contexts   contexts.Model
-	newContext newcontext.Model
+	newContext createmodal.Model
 	queryrun   queryrun.Model
 	state      state
 }

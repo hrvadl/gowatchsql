@@ -1,4 +1,4 @@
-package detailspanel
+package details
 
 type status int
 

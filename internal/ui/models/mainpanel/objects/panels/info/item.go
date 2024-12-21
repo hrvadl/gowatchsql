@@ -1,12 +1,12 @@
-package infopanel
+package info
 
 import (
 	"github.com/charmbracelet/bubbles/list"
 
-	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
+	"github.com/hrvadl/gowatchsql/internal/service/engine"
 )
 
-func newItemsFromTable(t []sysexplorer.Table) []list.Item {
+func newItemsFromTable(t []engine.Table) []list.Item {
 	items := make([]list.Item, 0, len(t))
 	for _, tt := range t {
 		items = append(items, tableItem{Table: tt})
@@ -15,7 +15,7 @@ func newItemsFromTable(t []sysexplorer.Table) []list.Item {
 }
 
 type tableItem struct {
-	sysexplorer.Table
+	engine.Table
 }
 
 func (i tableItem) Title() string       { return i.Name }

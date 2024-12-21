@@ -1,7 +1,8 @@
-package sysexplorer
+package engine
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/jmoiron/sqlx"
@@ -38,4 +39,40 @@ func (e *postgreSQL) toTables(tables []postgreSQLTable) []Table {
 		t = append(t, Table(table))
 	}
 	return t
+}
+
+type Column = string
+
+type Row = []string
+
+func (e *postgreSQL) GetRows(ctx context.Context, table string) ([]Row, []Column, error) {
+	const queryFmt = "SELECT * FROM %s"
+	query := fmt.Sprintf(queryFmt, table)
+
+	entries, err := e.db.QueryxContext(ctx, query)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows := make([][]any, 0)
+	cols, err := entries.Columns()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	defer entries.Close()
+	for entries.Next() {
+		cols, err := entries.SliceScan()
+		if err != nil {
+			slog.Error("Got err", slog.Any("err", err))
+		}
+
+		rows = append(rows, cols)
+	}
+
+	if err := entries.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	return convertFromBinary(rows), cols, nil
 }

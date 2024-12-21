@@ -1,4 +1,4 @@
-package newcontext
+package createmodal
 
 import (
 	tea "github.com/charmbracelet/bubbletea"

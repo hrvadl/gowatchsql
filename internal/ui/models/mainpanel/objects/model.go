@@ -4,20 +4,19 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hrvadl/gowatchsql/internal/platform/db"
-	"github.com/hrvadl/gowatchsql/internal/service/sysexplorer"
-	"github.com/hrvadl/gowatchsql/internal/service/tableexplorer"
+	"github.com/hrvadl/gowatchsql/internal/service/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
-	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/detailspanel"
-	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/infopanel"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/info"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 // @TODO: gracefully close connections
 func NewModel() Model {
+	f := engine.NewFactory()
 	return Model{
-		info:    infopanel.NewModel(sysexplorer.New),
-		details: detailspanel.NewModel(),
+		info:    info.NewModel(f),
+		details: details.NewModel(f),
 	}
 }
 
@@ -39,8 +38,8 @@ type Model struct {
 	width  int
 	height int
 
-	info    infopanel.Model
-	details detailspanel.Model
+	info    info.Model
+	details details.Model
 }
 
 func (m Model) Init() tea.Cmd {
@@ -58,7 +57,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case message.FetchedTableContent:
 		return m.delegateToDetailsModel(msg)
 	case message.SelectedContext, message.FetchedTableList:
-		return m.delegateToInfoModel(msg)
+		return m.delegateToAllModels(msg)
 	case message.Error:
 		return m.handleError(msg)
 	case message.MoveFocus:
@@ -157,7 +156,6 @@ func (m Model) handleWindowSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleTableChosen(msg message.SelectedTable) (Model, tea.Cmd) {
-	m.details.SetTableExplorer(tableexplorer.New(db.Get()))
 	return m.delegateToDetailsModel(msg)
 }
 
@@ -184,13 +182,13 @@ func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) delegateToDetailsModel(msg tea.Msg) (Model, tea.Cmd) {
 	model, cmd := m.details.Update(msg)
-	m.details = model.(detailspanel.Model)
+	m.details = model.(details.Model)
 	return m, cmd
 }
 
 func (m Model) delegateToInfoModel(msg tea.Msg) (Model, tea.Cmd) {
 	model, cmd := m.info.Update(msg)
-	m.info = model.(infopanel.Model)
+	m.info = model.(info.Model)
 	return m, cmd
 }
 
