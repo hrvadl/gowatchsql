@@ -1,12 +1,6 @@
 package db
 
-import (
-	"fmt"
-
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-)
+import "github.com/jmoiron/sqlx"
 
 type connection struct {
 	db     *sqlx.DB
@@ -24,29 +18,4 @@ func (c *connection) Close() error {
 	}
 
 	return nil
-}
-
-var opened connection
-
-func New(driver, dsn string) (*sqlx.DB, error) {
-	if opened.AlreadyOpened(driver, dsn) {
-		return opened.db, nil
-	}
-
-	conn, err := sqlx.Connect(driver, dsn)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := opened.Close(); err != nil {
-		return nil, fmt.Errorf("close old connection: %w", err)
-	}
-
-	opened = connection{conn, driver, dsn}
-
-	return opened.db, nil
-}
-
-func Get() *sqlx.DB {
-	return opened.db
 }

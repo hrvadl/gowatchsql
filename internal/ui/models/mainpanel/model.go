@@ -1,8 +1,11 @@
 package mainpanel
 
 import (
+	"context"
+
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/hrvadl/gowatchsql/internal/service/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts"
@@ -12,9 +15,13 @@ import (
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
-func NewModel() Model {
+type ExplorerFactory interface {
+	Create(ctx context.Context, dsn string) (engine.Explorer, error)
+}
+
+func NewModel(ef ExplorerFactory) Model {
 	return Model{
-		objects:    objects.NewModel(),
+		objects:    objects.NewModel(ef),
 		contexts:   contexts.NewModel(),
 		newContext: createmodal.NewModel(),
 		queryrun:   queryrun.NewModel(),

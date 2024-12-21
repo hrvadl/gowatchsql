@@ -1,6 +1,8 @@
 package objects
 
 import (
+	"context"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -11,12 +13,14 @@ import (
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
-// @TODO: gracefully close connections
-func NewModel() Model {
-	f := engine.NewFactory()
+type ExplorerFactory interface {
+	Create(ctx context.Context, dsn string) (engine.Explorer, error)
+}
+
+func NewModel(ef ExplorerFactory) Model {
 	return Model{
-		info:    info.NewModel(f),
-		details: details.NewModel(f),
+		info:    info.NewModel(ef),
+		details: details.NewModel(ef),
 	}
 }
 

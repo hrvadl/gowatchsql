@@ -6,8 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
-
-	"github.com/hrvadl/gowatchsql/internal/platform/db"
+	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -25,30 +24,38 @@ type Table struct {
 	Schema string `db:"TABLE_TYPE"`
 }
 
-type Factory struct{}
-
-func NewFactory() *Factory {
-	return &Factory{}
+func NewFactory(pool Pool) *Factory {
+	return &Factory{
+		pool: pool,
+	}
 }
 
-func (f *Factory) Create(dsn string) (Explorer, error) {
+type Pool interface {
+	GetOrCreate(ctx context.Context, name, dsn string) (*sqlx.DB, error)
+}
+
+type Factory struct {
+	pool Pool
+}
+
+func (f *Factory) Create(ctx context.Context, dsn string) (Explorer, error) {
 	switch {
 	case strings.HasPrefix(dsn, mysqlDB):
-		return newMySQL(cleanDBType(dsn))
+		return f.createMySQL(ctx, cleanDBType(dsn))
 	case strings.HasPrefix(dsn, postgresqlDB):
-		return newPostgres(dsn)
+		return f.createPostgres(ctx, dsn)
 	default:
 		return nil, errors.New("not implemented")
 	}
 }
 
-func newPostgres(dsn string) (*postgreSQL, error) {
+func (f *Factory) createPostgres(ctx context.Context, dsn string) (*postgreSQL, error) {
 	dsn = strings.TrimSpace(dsn)
 	if !strings.Contains(dsn, "sslmode=") {
 		dsn += "?sslmode=disable"
 	}
 
-	db, err := db.New(postgresqlDB, dsn)
+	db, err := f.pool.GetOrCreate(ctx, postgresqlDB, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -59,13 +66,13 @@ func newPostgres(dsn string) (*postgreSQL, error) {
 	return &postgreSQL{db, dbName}, nil
 }
 
-func newMySQL(dsn string) (*mySQL, error) {
+func (f *Factory) createMySQL(ctx context.Context, dsn string) (*mySQL, error) {
 	params, err := mysql.ParseDSN(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := db.New(mysqlDB, dsn)
+	db, err := f.pool.GetOrCreate(ctx, mysqlDB, dsn)
 	if err != nil {
 		return nil, err
 	}

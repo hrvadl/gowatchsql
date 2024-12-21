@@ -28,7 +28,7 @@ type Column = string
 type Row = []string
 
 type ExplorerFactory interface {
-	Create(dsn string) (engine.Explorer, error)
+	Create(ctx context.Context, dsn string) (engine.Explorer, error)
 }
 
 type Model struct {
@@ -119,7 +119,10 @@ func (m Model) handleFetchedTableContent(msg message.FetchedTableContent) (Model
 }
 
 func (m Model) handleSelectedContext(msg message.SelectedContext) (tea.Model, tea.Cmd) {
-	explorer, err := m.engineFactory.Create(msg.DSN)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	explorer, err := m.engineFactory.Create(ctx, msg.DSN)
 	if err != nil {
 		m.err = err
 		m.state.status = errored
