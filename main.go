@@ -19,6 +19,7 @@ func main() {
 	l := logger.New(f)
 
 	p := tea.NewProgram(welcome.NewModel(l))
+	slog.SetLogLoggerLevel(slog.LevelDebug)
 	slog.Info("Starting the program")
 	if _, err := p.Run(); err != nil {
 		panic(fmt.Sprintf("Alas, there's been an error: %v", err))
