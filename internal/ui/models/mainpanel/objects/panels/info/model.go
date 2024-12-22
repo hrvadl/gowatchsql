@@ -30,7 +30,7 @@ func NewModel(ef ExplorerFactory) Model {
 }
 
 type ExplorerFactory interface {
-	Create(ctx context.Context, dsn string) (engine.Explorer, error)
+	Create(ctx context.Context, name, dsn string) (engine.Explorer, error)
 }
 
 type Model struct {
@@ -143,7 +143,7 @@ func (m Model) handleSelectedContext(msg message.SelectedContext) (tea.Model, te
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	explorer, err := m.engineFactory.Create(ctx, msg.DSN)
+	explorer, err := m.engineFactory.Create(ctx, msg.Name, msg.DSN)
 	if err != nil {
 		m.state.err = err
 		m.state.status = errored

@@ -7,20 +7,26 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"golang.org/x/sync/errgroup"
+
+	"github.com/hrvadl/gowatchsql/internal/platform/cfg"
 )
 
-// @TODO: save contexts.
-func NewPool() *Pool {
-	return &Pool{}
+func NewPool(cfg *cfg.Config) *Pool {
+	return &Pool{
+		opened: make(map[string]*sqlx.DB),
+		cfg:    cfg,
+	}
 }
 
 type Pool struct {
-	opened connection
+	opened map[string]*sqlx.DB
+	cfg    *cfg.Config
 }
 
-func (p *Pool) Get(ctx context.Context, driver, dsn string) (*sqlx.DB, error) {
-	if p.opened.AlreadyOpened(driver, dsn) {
-		return p.opened.db, nil
+func (p *Pool) Get(ctx context.Context, name, driver, dsn string) (*sqlx.DB, error) {
+	if conn, opened := p.opened[dsn]; opened {
+		return conn, nil
 	}
 
 	conn, err := sqlx.ConnectContext(ctx, driver, dsn)
@@ -28,15 +34,24 @@ func (p *Pool) Get(ctx context.Context, driver, dsn string) (*sqlx.DB, error) {
 		return nil, err
 	}
 
-	if err := p.opened.Close(); err != nil {
-		return nil, fmt.Errorf("close old connection: %w", err)
+	p.opened[dsn] = conn
+	p.cfg.Connections[dsn] = name
+	if err := p.cfg.Save(); err != nil {
+		return nil, fmt.Errorf("save config: %w", err)
 	}
 
-	p.opened = connection{conn, driver, dsn}
-
-	return p.opened.db, nil
+	return conn, nil
 }
 
 func (p *Pool) Close() error {
-	return p.opened.Close()
+	var g errgroup.Group
+	for _, conn := range p.opened {
+		g.Go(conn.Close)
+	}
+
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("close pool connections: %w", err)
+	}
+
+	return nil
 }

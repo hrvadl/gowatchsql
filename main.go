@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
 	"log/slog"
 	"os"
@@ -8,10 +9,18 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
+	"github.com/hrvadl/gowatchsql/internal/platform/cfg"
 	"github.com/hrvadl/gowatchsql/internal/platform/db"
 	"github.com/hrvadl/gowatchsql/internal/platform/logger"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/welcome"
 )
+
+const (
+	configPathEnvVarName = "XDG_CONFIG_HOME"
+	homeEnvVarName       = "HOME"
+)
+
+var basePath = cmp.Or(os.Getenv(configPathEnvVarName), os.Getenv(homeEnvVarName))
 
 func main() {
 	f, err := tea.LogToFile("debug.log", "")
@@ -20,7 +29,13 @@ func main() {
 	}
 
 	l := logger.New(f)
-	pool := db.NewPool()
+	cfg, err := cfg.NewFromFile(basePath)
+	if err != nil {
+		l.Error("Failed to load config", slog.Any("err", err))
+		os.Exit(1)
+	}
+
+	pool := db.NewPool(cfg)
 
 	defer func() {
 		if err := pool.Close(); err != nil {

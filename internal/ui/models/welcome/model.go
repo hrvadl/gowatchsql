@@ -17,7 +17,7 @@ import (
 )
 
 type ExplorerFactory interface {
-	Create(ctx context.Context, dsn string) (engine.Explorer, error)
+	Create(ctx context.Context, name, dsn string) (engine.Explorer, error)
 }
 
 func NewModel(log *slog.Logger, ef ExplorerFactory) Model {
