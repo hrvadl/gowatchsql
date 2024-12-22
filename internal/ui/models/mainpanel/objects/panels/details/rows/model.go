@@ -2,12 +2,13 @@ package rows
 
 import (
 	"context"
-	"math"
+	"strconv"
+	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	xtable "github.com/evertras/bubble-table/table"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
@@ -37,7 +38,7 @@ type Model struct {
 	chosen        string
 	engineFactory ExplorerFactory
 	explorer      engine.Explorer
-	table         table.Model
+	table         xtable.Model
 
 	state state
 	err   error
@@ -92,14 +93,20 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) handleFetchedTableContent(msg message.FetchedRows) (Model, tea.Cmd) {
 	m.state.status = ready
-	m.table = table.New(
-		table.WithColumns(m.mapToColumns(msg.Cols)),
-		table.WithRows(m.mapToRows(msg.Rows)),
-		table.WithFocused(true),
-		table.WithWidth(m.width-1),
-		table.WithHeight(m.height-10),
-		table.WithStyles(m.newTableStyles()),
-	)
+	m.table = xtable.New(m.mapToColumns(msg.Cols)).
+		WithRows(m.mapToRows(msg.Rows)).
+		WithRowStyleFunc(func(rsfi xtable.RowStyleFuncInput) lipgloss.Style {
+			if !rsfi.IsHighlighted {
+				return rsfi.Row.Style
+			}
+
+			return rsfi.Row.Style.Background(color.MainAccent)
+		}).
+		WithMaxTotalWidth(m.width - 1).
+		WithTargetWidth(m.width - 1).
+		WithHorizontalFreezeColumnCount(1).
+		WithBaseStyle(m.newTableStyles()).
+		Focused(true)
 	return m, nil
 }
 
@@ -135,8 +142,7 @@ func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
 func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
 	m.width = w
 	m.height = h
-	m.table.SetWidth(w - 1)
-	m.table.SetHeight(h - 10)
+	m.table = m.table.WithMaxTotalWidth(w - 1)
 	return m, nil
 }
 
@@ -155,23 +161,34 @@ func (m *Model) commandFetchTableContent(table string) tea.Cmd {
 	}
 }
 
-func (m Model) mapToColumns(cols []string) []table.Column {
-	t := make([]table.Column, 0)
-	width := round(m.width, len(cols))
-	for _, v := range cols {
-		t = append(t, table.Column{
-			Title: v,
-			Width: width,
-		})
+func (m Model) mapToColumns(cols []string) []xtable.Column {
+	t := make([]xtable.Column, 0)
+
+	var useDefaultWidth bool
+	if len(strings.Join(cols, "")) < m.width {
+		useDefaultWidth = true
+	}
+
+	for i, v := range cols {
+		width := len(v)
+		if useDefaultWidth {
+			width = m.width / len(cols)
+		}
+
+		t = append(t, xtable.NewFlexColumn(strconv.Itoa(i), v, width))
 	}
 	return t
 }
 
-func (m Model) mapToRows(entries []Row) []table.Row {
-	rows := make([]table.Row, 0)
+func (m Model) mapToRows(entries []Row) []xtable.Row {
+	rows := make([]xtable.Row, 0)
 
 	for _, row := range entries {
-		rows = append(rows, table.Row(row))
+		rowData := make(map[string]any)
+		for i, data := range row {
+			rowData[strconv.Itoa(i)] = data
+		}
+		rows = append(rows, xtable.NewRow(rowData))
 	}
 
 	return rows
@@ -186,21 +203,11 @@ func (m Model) newContainerStyles() lipgloss.Style {
 	return base.BorderForeground(color.Border)
 }
 
-func (m Model) newTableStyles() table.Styles {
-	s := table.DefaultStyles()
-	s.Cell = s.Cell.MaxWidth(m.width + 1)
-	s.Header = lipgloss.NewStyle().
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(color.Border).
-		BorderBottom(true).
-		Bold(true)
-	s.Selected = s.Selected.
+func (m Model) newTableStyles() lipgloss.Style {
+	styleBase := lipgloss.NewStyle().
 		Foreground(color.Text).
-		Background(color.MainAccent).
-		Bold(true)
-	return s
-}
+		BorderForeground(color.Border).
+		Align(lipgloss.Right)
 
-func round(i, ii int) int {
-	return int(math.Round(float64(i) / float64(ii)))
+	return styleBase
 }
