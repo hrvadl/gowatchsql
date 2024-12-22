@@ -63,9 +63,10 @@ func (m Model) handleDefault(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleFormCompleted() (Model, tea.Cmd) {
+	dsn := m.form.GetString("dsn")
 	msg := message.NewContext{
-		Name: m.form.GetString("name"),
-		DSN:  m.form.GetString("dsn"),
+		Name: formatEmodjiBasedOnDB(dsn, m.form.GetString("name")),
+		DSN:  dsn,
 	}
 
 	if done := m.form.GetBool("done"); done {

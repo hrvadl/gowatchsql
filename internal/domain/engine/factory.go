@@ -55,7 +55,7 @@ func (f *Factory) createPostgres(ctx context.Context, name, dsn string) (*postgr
 		dsn += "?sslmode=disable"
 	}
 
-	db, err := f.pool.Get(ctx, name, postgresqlDB, dsn)
+	db, err := f.pool.Get(ctx, name+" 🐘", postgresqlDB, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (f *Factory) createMySQL(ctx context.Context, name, dsn string) (*mySQL, er
 		return nil, err
 	}
 
-	db, err := f.pool.Get(ctx, name, mysqlDB, dsn)
+	db, err := f.pool.Get(ctx, name+" 🐬", mysqlDB, dsn)
 	if err != nil {
 		return nil, err
 	}
