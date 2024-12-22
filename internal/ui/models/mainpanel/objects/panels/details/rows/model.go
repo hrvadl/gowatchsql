@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	xtable "github.com/evertras/bubble-table/table"
@@ -63,7 +64,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case message.SelectedContext:
 		return m.handleSelectedContext(msg)
 	default:
-		return m, nil
+		return m.delegateToTable(msg)
 	}
 }
 
@@ -81,6 +82,12 @@ func (m Model) View() string {
 	return s.Render(content)
 }
 
+func (m Model) delegateToTable(msg tea.Msg) (Model, tea.Cmd) {
+	table, cmd := m.table.Update(msg)
+	m.table = table
+	return m, cmd
+}
+
 func (m Model) Help() string {
 	return "Details help"
 }
@@ -93,6 +100,10 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) handleFetchedTableContent(msg message.FetchedRows) (Model, tea.Cmd) {
 	m.state.status = ready
+	keymap := xtable.DefaultKeyMap()
+	keymap.ScrollLeft = key.NewBinding(key.WithKeys(scrollLeft))
+	keymap.ScrollRight = key.NewBinding(key.WithKeys(scrollRight))
+
 	m.table = xtable.New(m.mapToColumns(msg.Cols)).
 		WithRows(m.mapToRows(msg.Rows)).
 		WithRowStyleFunc(func(rsfi xtable.RowStyleFuncInput) lipgloss.Style {
@@ -106,7 +117,9 @@ func (m Model) handleFetchedTableContent(msg message.FetchedRows) (Model, tea.Cm
 		WithTargetWidth(m.width - 1).
 		WithHorizontalFreezeColumnCount(1).
 		WithBaseStyle(m.newTableStyles()).
-		Focused(true)
+		Focused(true).
+		WithKeyMap(keymap)
+
 	return m, nil
 }
 

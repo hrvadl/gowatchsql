@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	xtable "github.com/evertras/bubble-table/table"
@@ -100,6 +101,9 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) handleFetchedTableContent(msg message.FetchedColumns) (Model, tea.Cmd) {
 	m.state.status = ready
+	keymap := xtable.DefaultKeyMap()
+	keymap.ScrollLeft = key.NewBinding(key.WithKeys(scrollLeft))
+	keymap.ScrollRight = key.NewBinding(key.WithKeys(scrollRight))
 	m.table = xtable.New(m.mapToColumns(msg.Cols)).
 		WithRows(m.mapToRows(msg.Rows)).
 		WithRowStyleFunc(func(rsfi xtable.RowStyleFuncInput) lipgloss.Style {
@@ -112,7 +116,8 @@ func (m Model) handleFetchedTableContent(msg message.FetchedColumns) (Model, tea
 		WithMaxTotalWidth(m.width - 1).
 		WithHorizontalFreezeColumnCount(1).
 		WithBaseStyle(m.newTableStyles()).
-		Focused(true)
+		Focused(true).
+		WithKeyMap(keymap)
 
 	return m, nil
 }
