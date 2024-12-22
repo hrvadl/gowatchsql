@@ -48,7 +48,7 @@ func createDir(base string) error {
 }
 
 type Config struct {
-	file        io.ReadWriteCloser
+	file        *os.File
 	Connections map[string]string `yaml:"connections"`
 }
 
@@ -57,8 +57,16 @@ func (c *Config) GetConnections(context.Context) map[string]string {
 }
 
 func (c *Config) Save() error {
+	if err := c.file.Truncate(0); err != nil {
+		return fmt.Errorf("truncate config: %w", err)
+	}
+
+	if _, err := c.file.Seek(0, 0); err != nil {
+		return fmt.Errorf("seek config: %w", err)
+	}
+
 	if err := yaml.NewEncoder(c.file).Encode(c); err != nil {
-		return fmt.Errorf("encode: %w", err)
+		return fmt.Errorf("encode config: %w", err)
 	}
 	return nil
 }
