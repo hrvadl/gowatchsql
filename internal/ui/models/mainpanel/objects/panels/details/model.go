@@ -119,7 +119,7 @@ func (m Model) handleFetchedTableContent(msg message.FetchedTableContent) (Model
 }
 
 func (m Model) handleSelectedContext(msg message.SelectedContext) (tea.Model, tea.Cmd) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 
 	explorer, err := m.engineFactory.Create(ctx, msg.Name, msg.DSN)

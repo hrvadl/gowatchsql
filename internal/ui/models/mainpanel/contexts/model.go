@@ -2,7 +2,6 @@ package contexts
 
 import (
 	"context"
-	"log/slog"
 	"slices"
 	"time"
 
@@ -88,7 +87,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) View() string {
 	s := m.newContainerStyles()
 	if !m.state.formActive {
-		slog.Info("Contexts model rendering", slog.Any("connections", m.List.Items()))
 		return s.Render(m.List.View())
 	}
 

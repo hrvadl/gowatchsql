@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 	"errors"
-	"log/slog"
+	"fmt"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
@@ -42,12 +42,11 @@ type Factory struct {
 }
 
 func (f *Factory) Create(ctx context.Context, name, dsn string) (Explorer, error) {
-	slog.Info("Prefix", slog.Any("prefix", dsn))
 	switch {
-	case strings.HasPrefix(dsn, mysqlDB) || !strings.HasPrefix(dsn, "://"):
-		return f.createMySQL(ctx, name, cleanDBType(dsn))
 	case strings.HasPrefix(dsn, postgresqlDB):
 		return f.createPostgres(ctx, name, dsn)
+	case strings.HasPrefix(dsn, mysqlDB) || !strings.HasPrefix(dsn, "://"):
+		return f.createMySQL(ctx, name, cleanDBType(dsn))
 	default:
 		return nil, ErrUnknownDB
 	}
@@ -61,7 +60,7 @@ func (f *Factory) createPostgres(ctx context.Context, name, dsn string) (*postgr
 
 	db, err := f.pool.Get(ctx, name, postgresqlDB, dsn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect to postgres: %w", err)
 	}
 
 	parts := strings.Split(dsn, "/")
@@ -73,12 +72,12 @@ func (f *Factory) createPostgres(ctx context.Context, name, dsn string) (*postgr
 func (f *Factory) createMySQL(ctx context.Context, name, dsn string) (*mySQL, error) {
 	params, err := mysql.ParseDSN(dsn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("validate mysql url: %w", err)
 	}
 
 	db, err := f.pool.Get(ctx, name, mysqlDB, dsn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect to mysql: %w", err)
 	}
 
 	return &mySQL{db, params.DBName}, nil
