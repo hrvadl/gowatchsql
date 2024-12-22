@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
+	"github.com/hrvadl/gowatchsql/internal/platform/cfg"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/command"
@@ -20,11 +21,11 @@ type ExplorerFactory interface {
 	Create(ctx context.Context, name, dsn string) (engine.Explorer, error)
 }
 
-type ConnectionsReppo interface {
-	GetConnections(context.Context) map[string]string
+type ConnectionsRepo interface {
+	GetConnections(context.Context) []cfg.Connection
 }
 
-func NewModel(log *slog.Logger, ef ExplorerFactory, connections ConnectionsReppo) Model {
+func NewModel(log *slog.Logger, ef ExplorerFactory, connections ConnectionsRepo) Model {
 	return Model{
 		log:     log,
 		command: command.NewModel(),

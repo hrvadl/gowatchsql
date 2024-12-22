@@ -177,7 +177,6 @@ func (m Model) mapToRows(entries []Row) []table.Row {
 	return rows
 }
 
-// @TODO: width and height
 func (m Model) newContainerStyles() lipgloss.Style {
 	base := lipgloss.
 		NewStyle().

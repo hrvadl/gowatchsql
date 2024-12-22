@@ -45,6 +45,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.delegateToAllModels(msg)
 	case message.MoveFocus:
 		return m.handleMoveFocus(msg)
+	case tea.KeyMsg:
+		return m.handleKeyPress(msg)
 	default:
 		return m.delegateToActiveModel(msg)
 	}
@@ -52,8 +54,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	s := m.newContainerStyles()
-	headerStyles := m.newHeaderStyles()
-	header := headerStyles.Render(m.newTitle())
+
+	headerStyles := lipgloss.NewStyle().
+		Width(m.width).
+		BorderBottom(true).
+		BorderForeground(color.Border)
+
+	rowsTab := m.newTabStyles(m.state.focused == rowsFocused).Render("Rows")
+	columnsTab := m.newTabStyles(m.state.focused == columnsFocused).Render("Columns")
+
+	header := headerStyles.Render(lipgloss.JoinHorizontal(lipgloss.Left, rowsTab, columnsTab))
 
 	var content string
 	switch m.state.focused {
@@ -66,10 +76,41 @@ func (m Model) View() string {
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, content))
 }
 
+func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
+	switch msg.String() {
+	case moveFocusLeft:
+		return m.handleMoveTabFocus(direction.Backwards)
+	case moveFocusRight:
+		return m.handleMoveTabFocus(direction.Forward)
+	default:
+		return m.delegateToActiveModel(msg)
+	}
+}
+
+func (m Model) handleMoveTabFocus(to direction.Direction) (Model, tea.Cmd) {
+	if to == direction.Forward && m.state.focused == columnsFocused {
+		m.state.focused = rowsFocused
+		return m, nil
+	}
+
+	if to == direction.Backwards && m.state.focused == rowsFocused {
+		m.state.focused = columnsFocused
+		return m, nil
+	}
+
+	if to == direction.Forward {
+		m.state.focused++
+		return m, nil
+	}
+
+	m.state.focused--
+	return m, nil
+}
+
 func (m Model) handleUpdateSize(width, height int) (Model, tea.Cmd) {
 	m.width = width
 	m.height = height
-	return m.delegateToActiveModel(tea.WindowSizeMsg{Width: width - 5, Height: height - 5})
+	return m.delegateToActiveModel(tea.WindowSizeMsg{Width: width, Height: height - 5})
 }
 
 func (m Model) delegateToAllModels(msg tea.Msg) (Model, tea.Cmd) {
@@ -92,6 +133,20 @@ func (m Model) delegateToRowsModel(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m Model) newTabStyles(active bool) lipgloss.Style {
+	base := lipgloss.
+		NewStyle().
+		Width(20).
+		Border(lipgloss.NormalBorder()).
+		Align(lipgloss.Center)
+
+	if active {
+		return base.BorderForeground(color.MainAccent)
+	}
+
+	return base.BorderForeground(color.Border)
+}
+
 func (m Model) newContainerStyles() lipgloss.Style {
 	base := lipgloss.
 		NewStyle().
@@ -99,16 +154,12 @@ func (m Model) newContainerStyles() lipgloss.Style {
 		Width(m.width).
 		Border(lipgloss.NormalBorder())
 
+	if m.state.active {
+		return base.Border(lipgloss.ThickBorder()).
+			BorderForeground(color.MainAccent)
+	}
+
 	return base.BorderForeground(color.Border)
-}
-
-func (m Model) newHeaderStyles() lipgloss.Style {
-	return lipgloss.NewStyle().
-		Margin(1)
-}
-
-func (m Model) newTitle() string {
-	return ""
 }
 
 func (m Model) handleMoveFocus(msg message.MoveFocus) (Model, tea.Cmd) {

@@ -7,7 +7,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
+	"time"
 
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -31,7 +34,7 @@ func NewFromFile(base string) (*Config, error) {
 		return nil, fmt.Errorf("open config: %w", err)
 	}
 
-	cfg := Config{file: f, Connections: make(map[string]string)}
+	cfg := Config{file: f, Connections: make(map[string]Connection)}
 	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil && !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("decode config: %w", err)
 	}
@@ -49,11 +52,27 @@ func createDir(base string) error {
 
 type Config struct {
 	file        *os.File
-	Connections map[string]string `yaml:"connections"`
+	Connections map[string]Connection `yaml:"connections"`
 }
 
-func (c *Config) GetConnections(context.Context) map[string]string {
-	return c.Connections
+type Connection struct {
+	Name       string    `yaml:"name"`
+	LastUsedAt time.Time `yaml:"last_used_at"`
+	DSN        string    `yaml:"dsn"`
+}
+
+func (c *Config) AddConnection(ctx context.Context, name, dsn string) error {
+	c.Connections[dsn] = Connection{Name: name, DSN: dsn, LastUsedAt: time.Now()}
+	return c.Save()
+}
+
+func (c *Config) GetConnections(context.Context) []Connection {
+	conns := maps.Values(c.Connections)
+	slices.SortStableFunc(conns, func(a, b Connection) int {
+		return b.LastUsedAt.Compare(a.LastUsedAt)
+	})
+
+	return conns
 }
 
 func (c *Config) Save() error {

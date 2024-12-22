@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/hrvadl/gowatchsql/internal/platform/cfg"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts/createmodal"
@@ -20,7 +21,7 @@ import (
 const margin = 1
 
 type ConnectionsReppo interface {
-	GetConnections(context.Context) map[string]string
+	GetConnections(context.Context) []cfg.Connection
 }
 
 func NewModel(connections ConnectionsReppo) *Model {
@@ -53,18 +54,21 @@ func (m *Model) Init() tea.Cmd {
 	defer cancel()
 
 	connections := m.connections.GetConnections(ctx)
-	batch := make([]list.Item, 0, len(connections))
+	if len(connections) == 0 {
+		return nil
+	}
 
-	for dsn, name := range connections {
-		msg := message.NewContext{OK: true, DSN: dsn, Name: name}
-		batch = append(batch, newItemFromContext(msg))
+	listItems := make([]list.Item, 0, len(connections))
+	for _, connection := range connections {
+		msg := message.NewContext{OK: true, DSN: connection.DSN, Name: connection.Name}
+		listItems = append(listItems, newItemFromContext(msg))
 	}
 
 	item := list.NewDefaultDelegate()
 	item.Styles = styles.NewForItemDelegate()
-	m.List = newList(item, batch)
+	m.List = newList(item, listItems)
 
-	return nil
+	return message.With(message.SelectedContext{Name: connections[0].Name, DSN: connections[0].DSN})
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {

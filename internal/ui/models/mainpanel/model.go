@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
+	"github.com/hrvadl/gowatchsql/internal/platform/cfg"
 	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts"
@@ -18,11 +19,11 @@ type ExplorerFactory interface {
 	Create(ctx context.Context, name, dsn string) (engine.Explorer, error)
 }
 
-type ConnectionsReppo interface {
-	GetConnections(context.Context) map[string]string
+type ConnectionsRepo interface {
+	GetConnections(context.Context) []cfg.Connection
 }
 
-func NewModel(explorerFactory ExplorerFactory, connections ConnectionsReppo) Model {
+func NewModel(explorerFactory ExplorerFactory, connections ConnectionsRepo) Model {
 	return Model{
 		objects:  objects.NewModel(explorerFactory),
 		contexts: contexts.NewModel(connections),

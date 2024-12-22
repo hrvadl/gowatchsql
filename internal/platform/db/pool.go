@@ -35,8 +35,7 @@ func (p *Pool) Get(ctx context.Context, name, driver, dsn string) (*sqlx.DB, err
 	}
 
 	p.opened[dsn] = conn
-	p.cfg.Connections[dsn] = name
-	if err := p.cfg.Save(); err != nil {
+	if err := p.cfg.AddConnection(ctx, name, dsn); err != nil {
 		return nil, fmt.Errorf("save config: %w", err)
 	}
 
