@@ -136,7 +136,7 @@ func (m Model) handleKeyEnter(msg tea.KeyMsg) (Model, tea.Cmd) {
 	}
 
 	if ctx, ok := m.List.SelectedItem().(ctxItem); ok {
-		return m, func() tea.Msg { return message.SelectedContext{DSN: ctx.Description(), Name: ctx.Title()} }
+		return m, message.With(message.SelectedContext{DSN: ctx.Description(), Name: ctx.Title()})
 	}
 	return m, nil
 }
@@ -159,10 +159,10 @@ func (m Model) handleDeleteContext() (Model, tea.Cmd) {
 func (m Model) handleToggleForm() (Model, tea.Cmd) {
 	m.state.formActive = !m.state.formActive
 	if m.state.formActive {
-		return m, func() tea.Msg { return message.BlockCommandLine{} }
+		return m, message.With(message.BlockCommandLine{})
 	}
 
-	return m, func() tea.Msg { return message.UnblockCommandLine{} }
+	return m, message.With(message.UnblockCommandLine{})
 }
 
 func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {

@@ -109,7 +109,7 @@ func (m Model) handleSelectItem() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	return m, func() tea.Msg { return message.SelectedTable{Name: chosen.Name} }
+	return m, message.With(message.SelectedTable{Name: chosen.Name})
 }
 
 func (m Model) delegateToList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -160,9 +160,7 @@ func (m Model) commandSelectTable(tables []engine.Table) tea.Cmd {
 		return nil
 	}
 
-	return func() tea.Msg {
-		return message.SelectedTable{Name: tables[0].Name}
-	}
+	return message.With(message.SelectedTable{Name: tables[0].Name})
 }
 
 func (m *Model) commandFetchTables() tea.Msg {

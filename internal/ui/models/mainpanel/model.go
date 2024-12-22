@@ -94,7 +94,7 @@ func (m Model) handleCommand(msg message.Command) (Model, tea.Cmd) {
 	case command.Exit:
 		return m, tea.Quit
 	}
-	return m, func() tea.Msg { return message.MoveFocus{Direction: direction.Forward} }
+	return m, message.With(message.MoveFocus{Direction: direction.Forward})
 }
 
 func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {

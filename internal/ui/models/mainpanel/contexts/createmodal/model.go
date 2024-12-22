@@ -75,7 +75,7 @@ func (m Model) handleFormCompleted() (Model, tea.Cmd) {
 
 	m.form.State = huh.StateNormal
 	m.form = newForm()
-	return m, tea.Batch(m.form.Init(), func() tea.Msg { return msg })
+	return m, tea.Batch(m.form.Init(), message.With(msg))
 }
 
 func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {

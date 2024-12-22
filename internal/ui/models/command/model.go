@@ -95,7 +95,7 @@ func (m Model) handleFocus() (Model, tea.Cmd) {
 func (m Model) handleMoveFocus(to direction.Direction) (Model, tea.Cmd) {
 	m.input.Blur()
 	m.state.active = false
-	return m, func() tea.Msg { return message.MoveFocus{Direction: to} }
+	return m, message.With(message.MoveFocus{Direction: to})
 }
 
 func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
@@ -110,7 +110,7 @@ func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 	val := m.Value()
 	m.input.SetValue("")
 	m.input.Placeholder = val
-	return m, func() tea.Msg { return message.Command{Text: command.Command(val)} }
+	return m, message.With(message.Command{Text: command.Command(val)})
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
