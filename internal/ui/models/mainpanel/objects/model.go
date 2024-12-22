@@ -82,7 +82,7 @@ func (m Model) Help() string {
 	case infoFocused:
 		return m.info.Help()
 	case detailsFocused:
-		return m.details.Help()
+		return "TODO"
 	default:
 		return "error: unknown view"
 	}
@@ -186,7 +186,7 @@ func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) delegateToDetailsModel(msg tea.Msg) (Model, tea.Cmd) {
 	model, cmd := m.details.Update(msg)
-	m.details = model.(details.Model)
+	m.details = model
 	return m, cmd
 }
 

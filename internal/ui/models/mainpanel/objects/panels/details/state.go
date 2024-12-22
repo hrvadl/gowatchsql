@@ -1,15 +1,13 @@
 package details
 
-type status int
-
 type state struct {
-	active bool
-	status status
+	active  bool
+	focused focused
 }
 
+type focused int
+
 const (
-	emtpy status = iota
-	loading
-	errored
-	ready
+	rowsFocused focused = iota
+	columnsFocused
 )
