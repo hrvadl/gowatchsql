@@ -62,7 +62,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case message.MoveFocus:
 		return m.handleMoveFocus(msg)
-	case message.Command, message.FetchedTableList, message.FetchedTableContent, message.SelectedTable:
+	case message.Command, message.FetchedTableList, message.FetchedRows, message.FetchedColumns, message.SelectedTable:
 		return m.delegateToMainPanel(msg)
 	case message.SelectedContext:
 		return m.delegateToAll(msg)

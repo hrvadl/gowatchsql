@@ -1,6 +1,6 @@
 package details
 
 const (
-	moveFocusLeft  = "h"
-	moveFocusRight = "l"
+	moveFocusLeft  = "H"
+	moveFocusRight = "L"
 )

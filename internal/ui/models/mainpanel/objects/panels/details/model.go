@@ -9,6 +9,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/columns"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/rows"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
@@ -17,7 +18,8 @@ const margin = 1
 
 func NewModel(ef ExplorerFactory) Model {
 	return Model{
-		rows: rows.NewModel(ef),
+		rows:    rows.NewModel(ef),
+		columns: columns.NewModel(ef),
 	}
 }
 
@@ -29,8 +31,9 @@ type Model struct {
 	width  int
 	height int
 
-	state state
-	rows  rows.Model
+	state   state
+	rows    rows.Model
+	columns columns.Model
 }
 
 func (m Model) Init() tea.Cmd {
@@ -41,12 +44,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.handleUpdateSize(msg.Width-margin*2, msg.Height-margin*2)
-	case message.SelectedContext:
+	case message.SelectedContext, message.SelectedTable:
 		return m.delegateToAllModels(msg)
 	case message.MoveFocus:
 		return m.handleMoveFocus(msg)
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
+	case message.FetchedRows:
+		return m.delegateToRowsModel(msg)
+	case message.FetchedColumns:
+		return m.delegateToColumnsModel(msg)
 	default:
 		return m.delegateToActiveModel(msg)
 	}
@@ -70,7 +77,7 @@ func (m Model) View() string {
 	case rowsFocused:
 		content = m.rows.View()
 	default:
-		content = "Indexes"
+		content = m.columns.View()
 	}
 
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, content))
@@ -110,21 +117,30 @@ func (m Model) handleMoveTabFocus(to direction.Direction) (Model, tea.Cmd) {
 func (m Model) handleUpdateSize(width, height int) (Model, tea.Cmd) {
 	m.width = width
 	m.height = height
-	return m.delegateToActiveModel(tea.WindowSizeMsg{Width: width, Height: height - 5})
+	return m.delegateToAllModels(tea.WindowSizeMsg{Width: width, Height: height - 5})
 }
 
 func (m Model) delegateToAllModels(msg tea.Msg) (Model, tea.Cmd) {
 	m, rowsCmd := m.delegateToRowsModel(msg)
-	return m, tea.Batch(rowsCmd)
+	m, columnsCmd := m.delegateToColumnsModel(msg)
+	return m, tea.Batch(rowsCmd, columnsCmd)
 }
 
 func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 	switch m.state.focused {
 	case rowsFocused:
 		return m.delegateToRowsModel(msg)
+	case columnsFocused:
+		return m.delegateToColumnsModel(msg)
 	default:
 		return m, nil
 	}
+}
+
+func (m Model) delegateToColumnsModel(msg tea.Msg) (Model, tea.Cmd) {
+	columns, cmd := m.columns.Update(msg)
+	m.columns = columns
+	return m, cmd
 }
 
 func (m Model) delegateToRowsModel(msg tea.Msg) (Model, tea.Cmd) {

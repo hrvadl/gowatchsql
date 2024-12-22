@@ -20,6 +20,7 @@ var ErrUnknownDB = errors.New("unknown database")
 type Explorer interface {
 	GetTables(ctx context.Context) ([]Table, error)
 	GetRows(ctx context.Context, table string) ([]Row, []Column, error)
+	GetColumns(ctx context.Context, table string) ([]Row, []Column, error)
 }
 
 type Table struct {

@@ -43,7 +43,12 @@ type (
 		Tables []engine.Table
 	}
 
-	FetchedTableContent struct {
+	FetchedRows struct {
+		Rows [][]string
+		Cols []string
+	}
+
+	FetchedColumns struct {
 		Rows [][]string
 		Cols []string
 	}

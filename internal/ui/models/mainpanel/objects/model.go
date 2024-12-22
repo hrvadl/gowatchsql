@@ -58,7 +58,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.handleKeyPress(msg)
 	case message.SelectedTable:
 		return m.handleTableChosen(msg)
-	case message.FetchedTableContent:
+	case message.FetchedRows, message.FetchedColumns:
 		return m.delegateToDetailsModel(msg)
 	case message.SelectedContext, message.FetchedTableList:
 		return m.delegateToAllModels(msg)

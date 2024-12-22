@@ -1,6 +1,8 @@
 package engine
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func convertFromBinary(entries [][]any) []Row {
 	rows := make([]Row, 0)
