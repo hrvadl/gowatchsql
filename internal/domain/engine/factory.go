@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
@@ -13,6 +14,8 @@ const (
 	mysqlDB      = "mysql"
 	postgresqlDB = "postgres"
 )
+
+var ErrUnknownDB = errors.New("unknown database")
 
 type Explorer interface {
 	GetTables(ctx context.Context) ([]Table, error)
@@ -39,13 +42,14 @@ type Factory struct {
 }
 
 func (f *Factory) Create(ctx context.Context, name, dsn string) (Explorer, error) {
+	slog.Info("Prefix", slog.Any("prefix", dsn))
 	switch {
-	case strings.HasPrefix(dsn, mysqlDB):
+	case strings.HasPrefix(dsn, mysqlDB) || !strings.HasPrefix(dsn, "://"):
 		return f.createMySQL(ctx, name, cleanDBType(dsn))
 	case strings.HasPrefix(dsn, postgresqlDB):
 		return f.createPostgres(ctx, name, dsn)
 	default:
-		return nil, errors.New("not implemented")
+		return nil, ErrUnknownDB
 	}
 }
 
@@ -55,7 +59,7 @@ func (f *Factory) createPostgres(ctx context.Context, name, dsn string) (*postgr
 		dsn += "?sslmode=disable"
 	}
 
-	db, err := f.pool.Get(ctx, name+" 🐘", postgresqlDB, dsn)
+	db, err := f.pool.Get(ctx, name, postgresqlDB, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +76,7 @@ func (f *Factory) createMySQL(ctx context.Context, name, dsn string) (*mySQL, er
 		return nil, err
 	}
 
-	db, err := f.pool.Get(ctx, name+" 🐬", mysqlDB, dsn)
+	db, err := f.pool.Get(ctx, name, mysqlDB, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +87,7 @@ func (f *Factory) createMySQL(ctx context.Context, name, dsn string) (*mySQL, er
 func cleanDBType(dsn string) string {
 	splits := strings.Split(dsn, "://")
 	if len(splits) != 2 {
-		return ""
+		return dsn
 	}
 	return splits[1]
 }
