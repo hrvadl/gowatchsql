@@ -9,7 +9,6 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts"
-	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/contexts/createmodal"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/queryrun"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
@@ -19,25 +18,28 @@ type ExplorerFactory interface {
 	Create(ctx context.Context, name, dsn string) (engine.Explorer, error)
 }
 
-func NewModel(ef ExplorerFactory) Model {
+type ConnectionsReppo interface {
+	GetConnections(context.Context) map[string]string
+}
+
+func NewModel(explorerFactory ExplorerFactory, connections ConnectionsReppo) Model {
 	return Model{
-		objects:    objects.NewModel(ef),
-		contexts:   contexts.NewModel(),
-		newContext: createmodal.NewModel(),
-		queryrun:   queryrun.NewModel(),
+		objects:  objects.NewModel(explorerFactory),
+		contexts: contexts.NewModel(connections),
+		queryrun: queryrun.NewModel(),
 	}
 }
 
 type Model struct {
-	objects    objects.Model
-	contexts   contexts.Model
-	newContext createmodal.Model
-	queryrun   queryrun.Model
-	state      state
+	objects  objects.Model
+	contexts *contexts.Model
+	queryrun queryrun.Model
+	state    state
 }
 
 func (m Model) Init() tea.Cmd {
-	return nil
+	b := tea.Batch(m.objects.Init(), m.contexts.Init(), m.queryrun.Init())
+	return b
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -65,8 +67,6 @@ func (m Model) View() string {
 		return m.objects.View()
 	case contextsActive:
 		return m.contexts.View()
-	case newContextActive:
-		return m.newContext.View()
 	case queryRunActive:
 		return m.queryrun.View()
 	default:
@@ -104,9 +104,8 @@ func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
 func (m Model) delegateToAllModels(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	m, objCmd := m.delegateToObjectsModel(msg)
 	m, contextsCmd := m.delegateToContextsModel(msg)
-	m, newContextsCmd := m.delegateToNewContextsModel(msg)
 	m, queryRunCmd := m.delegateToQueryRunModel(msg)
-	return m, tea.Batch(objCmd, contextsCmd, newContextsCmd, queryRunCmd)
+	return m, tea.Batch(objCmd, contextsCmd, queryRunCmd)
 }
 
 func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
@@ -115,8 +114,6 @@ func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 		return m.delegateToObjectsModel(msg)
 	case contextsActive:
 		return m.delegateToContextsModel(msg)
-	case newContextActive:
-		return m.delegateToNewContextsModel(msg)
 	case queryRunActive:
 		return m.delegateToQueryRunModel(msg)
 	default:
@@ -132,13 +129,7 @@ func (m Model) delegateToObjectsModel(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) delegateToContextsModel(msg tea.Msg) (Model, tea.Cmd) {
 	model, cmd := m.contexts.Update(msg)
-	m.contexts = model
-	return m, cmd
-}
-
-func (m Model) delegateToNewContextsModel(msg tea.Msg) (Model, tea.Cmd) {
-	model, cmd := m.newContext.Update(msg)
-	m.newContext = model
+	m.contexts = &model
 	return m, cmd
 }
 

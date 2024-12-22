@@ -45,7 +45,7 @@ func main() {
 	}()
 
 	factory := engine.NewFactory(pool)
-	p := tea.NewProgram(welcome.NewModel(l, factory))
+	p := tea.NewProgram(welcome.NewModel(l, factory, cfg))
 
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 	l.Info("Starting the program")

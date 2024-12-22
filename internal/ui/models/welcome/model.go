@@ -20,11 +20,15 @@ type ExplorerFactory interface {
 	Create(ctx context.Context, name, dsn string) (engine.Explorer, error)
 }
 
-func NewModel(log *slog.Logger, ef ExplorerFactory) Model {
+type ConnectionsReppo interface {
+	GetConnections(context.Context) map[string]string
+}
+
+func NewModel(log *slog.Logger, ef ExplorerFactory, connections ConnectionsReppo) Model {
 	return Model{
 		log:     log,
 		command: command.NewModel(),
-		main:    mainpanel.NewModel(ef),
+		main:    mainpanel.NewModel(ef, connections),
 	}
 }
 
@@ -44,7 +48,7 @@ type Model struct {
 }
 
 func (m Model) Init() tea.Cmd {
-	return nil
+	return tea.Batch(m.main.Init(), m.command.Init())
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

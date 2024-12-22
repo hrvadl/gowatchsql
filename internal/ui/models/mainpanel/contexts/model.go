@@ -1,7 +1,10 @@
 package contexts
 
 import (
+	"context"
+	"log/slog"
 	"slices"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -17,30 +20,51 @@ import (
 
 const margin = 1
 
-func NewModel() Model {
+type ConnectionsReppo interface {
+	GetConnections(context.Context) map[string]string
+}
+
+func NewModel(connections ConnectionsReppo) *Model {
 	item := list.NewDefaultDelegate()
 	item.Styles = styles.NewForItemDelegate()
-	list := newList(item)
+	list := newList(item, []list.Item{})
 
-	return Model{
-		list: list,
+	return &Model{
+		List: list,
 		state: state{
 			active:     false,
 			formActive: false,
 		},
-		newCtx: createmodal.NewModel(),
+		newCtx:      createmodal.NewModel(),
+		connections: connections,
 	}
 }
 
 type Model struct {
-	width  int
-	height int
-	list   list.Model
-	state  state
-	newCtx createmodal.Model
+	width       int
+	height      int
+	List        list.Model
+	state       state
+	newCtx      createmodal.Model
+	connections ConnectionsReppo
 }
 
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	connections := m.connections.GetConnections(ctx)
+	batch := make([]list.Item, 0, len(connections))
+
+	for dsn, name := range connections {
+		msg := message.NewContext{OK: true, DSN: dsn, Name: name}
+		batch = append(batch, newItemFromContext(msg))
+	}
+
+	item := list.NewDefaultDelegate()
+	item.Styles = styles.NewForItemDelegate()
+	m.List = newList(item, batch)
+
 	return nil
 }
 
@@ -64,7 +88,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) View() string {
 	s := m.newContainerStyles()
 	if !m.state.formActive {
-		return s.Render(m.list.View())
+		slog.Info("Contexts model rendering", slog.Any("connections", m.List.Items()))
+		return s.Render(m.List.View())
 	}
 
 	return s.Padding(1, 2).Render(m.newCtx.View())
@@ -80,8 +105,8 @@ func (m Model) handleNewContext(msg message.NewContext) (Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	newItems := append(m.list.Items(), newItemFromContext(msg))
-	return m, tea.Batch(cmd, m.list.SetItems(newItems))
+	newItems := append(m.List.Items(), newItemFromContext(msg))
+	return m, tea.Batch(cmd, m.List.SetItems(newItems))
 }
 
 func (m Model) handleMoveFocus(msg message.MoveFocus) (Model, tea.Cmd) {
@@ -110,7 +135,7 @@ func (m Model) handleKeyEnter(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m.delegateToActive(msg)
 	}
 
-	if ctx, ok := m.list.SelectedItem().(ctxItem); ok {
+	if ctx, ok := m.List.SelectedItem().(ctxItem); ok {
 		return m, func() tea.Msg { return message.SelectedContext{DSN: ctx.Description(), Name: ctx.Title()} }
 	}
 	return m, nil
@@ -126,9 +151,9 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleDeleteContext() (Model, tea.Cmd) {
-	items := m.list.Items()
-	idx := m.list.Index()
-	return m, m.list.SetItems(slices.Delete(items, idx, idx+1))
+	items := m.List.Items()
+	idx := m.List.Index()
+	return m, m.List.SetItems(slices.Delete(items, idx, idx+1))
 }
 
 func (m Model) handleToggleForm() (Model, tea.Cmd) {
@@ -147,8 +172,8 @@ func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
 func (m Model) handleWindowSize(w, h int) (Model, tea.Cmd) {
 	m.width = w
 	m.height = h
-	m.list.SetSize(w, h)
-	m.list.Styles.TitleBar = m.list.Styles.TitleBar.Width(w)
+	m.List.SetSize(w, h)
+	m.List.Styles.TitleBar = m.List.Styles.TitleBar.Width(w)
 	msg := tea.WindowSizeMsg{Height: h, Width: w}
 	m, cmd := m.delegateToAll(msg)
 	return m, cmd
@@ -189,7 +214,7 @@ func (m Model) delegateToNewContextModel(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) delegateToList(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	m.List, cmd = m.List.Update(msg)
 	return m, cmd
 }
 
@@ -207,10 +232,10 @@ func (m Model) newContainerStyles() lipgloss.Style {
 	return base.BorderForeground(color.Border)
 }
 
-func newList(item list.ItemDelegate) list.Model {
+func newList(item list.ItemDelegate, rows []list.Item) list.Model {
 	const defaultTitle = "Contexts"
 
-	l := list.New([]list.Item{}, item, 0, 0)
+	l := list.New(rows, item, 0, 0)
 	l.SetShowStatusBar(false)
 	l.SetShowPagination(false)
 	l.InfiniteScrolling = true

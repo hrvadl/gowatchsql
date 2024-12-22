@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -25,8 +26,7 @@ func NewFromFile(base string) (*Config, error) {
 	}
 
 	cfgPath := filepath.Join(dirPath, filename)
-
-	f, err := os.OpenFile(cfgPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, filemode)
+	f, err := os.OpenFile(cfgPath, os.O_RDWR|os.O_CREATE, filemode)
 	if err != nil {
 		return nil, fmt.Errorf("open config: %w", err)
 	}
@@ -50,6 +50,10 @@ func createDir(base string) error {
 type Config struct {
 	file        io.ReadWriteCloser
 	Connections map[string]string `yaml:"connections"`
+}
+
+func (c *Config) GetConnections(context.Context) map[string]string {
+	return c.Connections
 }
 
 func (c *Config) Save() error {
