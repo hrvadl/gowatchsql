@@ -99,6 +99,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
+// @TODO: filter columns
 func (m Model) handleFetchedTableContent(msg message.FetchedColumns) (Model, tea.Cmd) {
 	m.state.status = ready
 	keymap := xtable.DefaultKeyMap()
@@ -114,6 +115,7 @@ func (m Model) handleFetchedTableContent(msg message.FetchedColumns) (Model, tea
 			return rsfi.Row.Style.Background(color.MainAccent)
 		}).
 		WithMaxTotalWidth(m.width - 1).
+		WithTargetWidth(len(strings.Join(msg.Cols, ""))).
 		WithHorizontalFreezeColumnCount(1).
 		WithBaseStyle(m.newTableStyles()).
 		Focused(true).
@@ -154,7 +156,7 @@ func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
 func (m Model) handleUpdateSize(w, h int) (Model, tea.Cmd) {
 	m.width = w
 	m.height = h
-	m.table = m.table.WithMaxTotalWidth(w - 1)
+	m.table = m.table.WithTargetWidth(w - 1)
 	return m, nil
 }
 
@@ -177,18 +179,8 @@ func (m *Model) commandFetchTableContent(table string) tea.Cmd {
 func (m Model) mapToColumns(cols []string) []xtable.Column {
 	t := make([]xtable.Column, 0)
 
-	var useDefaultWidth bool
-	if len(strings.Join(cols, "")) < m.width {
-		useDefaultWidth = true
-	}
-
 	for i, v := range cols {
-		width := len(v)
-		if useDefaultWidth {
-			width = m.width / len(cols)
-		}
-
-		t = append(t, xtable.NewColumn(strconv.Itoa(i), v, width))
+		t = append(t, xtable.NewFlexColumn(strconv.Itoa(i), v, 1))
 	}
 	return t
 }
