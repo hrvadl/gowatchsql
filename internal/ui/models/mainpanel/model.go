@@ -56,7 +56,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		message.FetchedRows,
 		message.FetchedColumns,
 		message.FetchedTableList,
-		message.FetchedIndexes:
+		message.FetchedIndexes,
+		message.FetchedConstraints:
 		return m.delegateToObjectsModel(msg)
 	case message.Command:
 		return m.handleCommand(msg)

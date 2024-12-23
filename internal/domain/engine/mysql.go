@@ -146,3 +146,40 @@ func (e *mySQL) GetIndexes(ctx context.Context, table string) ([]Row, []Column, 
 
 	return convertFromBinary(rows), cols, nil
 }
+
+func (e *mySQL) GetConstraints(ctx context.Context, table string) ([]Row, []Column, error) {
+	const queryFmt = `
+		SELECT * 
+		FROM   information_schema.table_constraints
+		WHERE  table_schema = schema()
+		AND    table_name = '%s';
+	`
+	query := fmt.Sprintf(queryFmt, table)
+
+	entries, err := e.db.QueryxContext(ctx, query)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows := make([][]any, 0)
+	cols, err := entries.Columns()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	defer entries.Close()
+	for entries.Next() {
+		cols, err := entries.SliceScan()
+		if err != nil {
+			slog.Error("Got err", slog.Any("err", err))
+		}
+
+		rows = append(rows, cols)
+	}
+
+	if err := entries.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	return convertFromBinary(rows), cols, nil
+}

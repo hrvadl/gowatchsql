@@ -22,6 +22,7 @@ type Explorer interface {
 	GetRows(ctx context.Context, table string) ([]Row, []Column, error)
 	GetColumns(ctx context.Context, table string) ([]Row, []Column, error)
 	GetIndexes(ctx context.Context, table string) ([]Row, []Column, error)
+	GetConstraints(ctx context.Context, table string) ([]Row, []Column, error)
 }
 
 type Table struct {

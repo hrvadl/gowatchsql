@@ -58,6 +58,11 @@ type (
 		Cols []string
 	}
 
+	FetchedConstraints struct {
+		Rows [][]string
+		Cols []string
+	}
+
 	SelectedTable struct {
 		Name string
 	}

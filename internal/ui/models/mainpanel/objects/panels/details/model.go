@@ -10,6 +10,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/columns"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/constraints"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/indexes"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/rows"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
@@ -19,9 +20,10 @@ const margin = 1
 
 func NewModel(ef ExplorerFactory) Model {
 	return Model{
-		rows:    rows.NewModel(ef),
-		columns: columns.NewModel(ef),
-		indexes: indexes.NewModel(ef),
+		rows:        rows.NewModel(ef),
+		columns:     columns.NewModel(ef),
+		indexes:     indexes.NewModel(ef),
+		constraints: constraints.NewModel(ef),
 	}
 }
 
@@ -35,9 +37,10 @@ type Model struct {
 
 	state state
 
-	rows    rows.Model
-	columns columns.Model
-	indexes indexes.Model
+	rows        rows.Model
+	columns     columns.Model
+	indexes     indexes.Model
+	constraints constraints.Model
 }
 
 func (m Model) Init() tea.Cmd {
@@ -58,6 +61,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.delegateToRowsModel(msg)
 	case message.FetchedColumns:
 		return m.delegateToColumnsModel(msg)
+	case message.FetchedConstraints:
+		return m.delegateToConstraintsModel(msg)
 	case message.FetchedIndexes:
 		return m.delegateToIndexesModel(msg)
 	default:
@@ -65,6 +70,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 }
 
+// @TODO: horizontal scrolling
 func (m Model) View() string {
 	s := m.newContainerStyles()
 
@@ -76,9 +82,10 @@ func (m Model) View() string {
 	rowsTab := m.newTabStyles(m.state.focused == rowsFocused).Render("Rows")
 	columnsTab := m.newTabStyles(m.state.focused == columnsFocused).Render("Columns")
 	indexesTab := m.newTabStyles(m.state.focused == indexesFocused).Render("Indexes")
+	constraintsTab := m.newTabStyles(m.state.focused == constraintsFocused).Render("Constraints")
 
 	header := headerStyles.Render(
-		lipgloss.JoinHorizontal(lipgloss.Left, rowsTab, columnsTab, indexesTab),
+		lipgloss.JoinHorizontal(lipgloss.Left, rowsTab, columnsTab, indexesTab, constraintsTab),
 	)
 
 	var content string
@@ -87,6 +94,8 @@ func (m Model) View() string {
 		content = m.indexes.View()
 	case columnsFocused:
 		content = m.columns.View()
+	case constraintsFocused:
+		content = m.constraints.View()
 	default:
 		content = m.rows.View()
 	}
@@ -106,13 +115,13 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleMoveTabFocus(to direction.Direction) (Model, tea.Cmd) {
-	if to == direction.Forward && m.state.focused == indexesFocused {
+	if to == direction.Forward && m.state.focused == constraintsFocused {
 		m.state.focused = rowsFocused
 		return m, nil
 	}
 
 	if to == direction.Backwards && m.state.focused == rowsFocused {
-		m.state.focused = indexesFocused
+		m.state.focused = constraintsFocused
 		return m, nil
 	}
 
@@ -135,7 +144,8 @@ func (m Model) delegateToAllModels(msg tea.Msg) (Model, tea.Cmd) {
 	m, rowsCmd := m.delegateToRowsModel(msg)
 	m, columnsCmd := m.delegateToColumnsModel(msg)
 	m, indexesCmd := m.delegateToIndexesModel(msg)
-	return m, tea.Batch(rowsCmd, columnsCmd, indexesCmd)
+	m, constraintsCmd := m.delegateToConstraintsModel(msg)
+	return m, tea.Batch(rowsCmd, columnsCmd, indexesCmd, constraintsCmd)
 }
 
 func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
@@ -146,9 +156,17 @@ func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 		return m.delegateToColumnsModel(msg)
 	case indexesFocused:
 		return m.delegateToIndexesModel(msg)
+	case constraintsFocused:
+		return m.delegateToConstraintsModel(msg)
 	default:
 		return m, nil
 	}
+}
+
+func (m Model) delegateToConstraintsModel(msg tea.Msg) (Model, tea.Cmd) {
+	constraints, cmd := m.constraints.Update(msg)
+	m.constraints = constraints
+	return m, cmd
 }
 
 func (m Model) delegateToIndexesModel(msg tea.Msg) (Model, tea.Cmd) {

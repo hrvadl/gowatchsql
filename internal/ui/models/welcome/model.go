@@ -67,7 +67,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		message.FetchedRows,
 		message.FetchedColumns,
 		message.SelectedTable,
-		message.FetchedIndexes:
+		message.FetchedIndexes,
+		message.FetchedConstraints:
 		return m.delegateToMainPanel(msg)
 	case message.SelectedContext:
 		return m.delegateToAll(msg)

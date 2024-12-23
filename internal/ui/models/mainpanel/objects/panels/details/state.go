@@ -11,4 +11,5 @@ const (
 	rowsFocused focused = iota
 	columnsFocused
 	indexesFocused
+	constraintsFocused
 )
