@@ -60,7 +60,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.handleTableChosen(msg)
 	case message.FetchedRows, message.FetchedColumns:
 		return m.delegateToDetailsModel(msg)
-	case message.SelectedContext, message.FetchedTableList:
+	case message.SelectedContext, message.FetchedTableList, message.FetchedIndexes:
 		return m.delegateToAllModels(msg)
 	case message.Error:
 		return m.handleError(msg)

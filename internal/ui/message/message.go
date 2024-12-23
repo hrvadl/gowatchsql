@@ -53,6 +53,11 @@ type (
 		Cols []string
 	}
 
+	FetchedIndexes struct {
+		Rows [][]string
+		Cols []string
+	}
+
 	SelectedTable struct {
 		Name string
 	}

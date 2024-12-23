@@ -10,6 +10,7 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/columns"
+	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/indexes"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/rows"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
@@ -20,6 +21,7 @@ func NewModel(ef ExplorerFactory) Model {
 	return Model{
 		rows:    rows.NewModel(ef),
 		columns: columns.NewModel(ef),
+		indexes: indexes.NewModel(ef),
 	}
 }
 
@@ -31,9 +33,11 @@ type Model struct {
 	width  int
 	height int
 
-	state   state
+	state state
+
 	rows    rows.Model
 	columns columns.Model
+	indexes indexes.Model
 }
 
 func (m Model) Init() tea.Cmd {
@@ -54,6 +58,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.delegateToRowsModel(msg)
 	case message.FetchedColumns:
 		return m.delegateToColumnsModel(msg)
+	case message.FetchedIndexes:
+		return m.delegateToIndexesModel(msg)
 	default:
 		return m.delegateToActiveModel(msg)
 	}
@@ -69,15 +75,20 @@ func (m Model) View() string {
 
 	rowsTab := m.newTabStyles(m.state.focused == rowsFocused).Render("Rows")
 	columnsTab := m.newTabStyles(m.state.focused == columnsFocused).Render("Columns")
+	indexesTab := m.newTabStyles(m.state.focused == indexesFocused).Render("Indexes")
 
-	header := headerStyles.Render(lipgloss.JoinHorizontal(lipgloss.Left, rowsTab, columnsTab))
+	header := headerStyles.Render(
+		lipgloss.JoinHorizontal(lipgloss.Left, rowsTab, columnsTab, indexesTab),
+	)
 
 	var content string
 	switch m.state.focused {
-	case rowsFocused:
-		content = m.rows.View()
-	default:
+	case indexesFocused:
+		content = m.indexes.View()
+	case columnsFocused:
 		content = m.columns.View()
+	default:
+		content = m.rows.View()
 	}
 
 	return s.Render(lipgloss.JoinVertical(lipgloss.Top, header, content))
@@ -95,13 +106,13 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleMoveTabFocus(to direction.Direction) (Model, tea.Cmd) {
-	if to == direction.Forward && m.state.focused == columnsFocused {
+	if to == direction.Forward && m.state.focused == indexesFocused {
 		m.state.focused = rowsFocused
 		return m, nil
 	}
 
 	if to == direction.Backwards && m.state.focused == rowsFocused {
-		m.state.focused = columnsFocused
+		m.state.focused = indexesFocused
 		return m, nil
 	}
 
@@ -123,7 +134,8 @@ func (m Model) handleUpdateSize(width, height int) (Model, tea.Cmd) {
 func (m Model) delegateToAllModels(msg tea.Msg) (Model, tea.Cmd) {
 	m, rowsCmd := m.delegateToRowsModel(msg)
 	m, columnsCmd := m.delegateToColumnsModel(msg)
-	return m, tea.Batch(rowsCmd, columnsCmd)
+	m, indexesCmd := m.delegateToIndexesModel(msg)
+	return m, tea.Batch(rowsCmd, columnsCmd, indexesCmd)
 }
 
 func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
@@ -132,9 +144,17 @@ func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 		return m.delegateToRowsModel(msg)
 	case columnsFocused:
 		return m.delegateToColumnsModel(msg)
+	case indexesFocused:
+		return m.delegateToIndexesModel(msg)
 	default:
 		return m, nil
 	}
+}
+
+func (m Model) delegateToIndexesModel(msg tea.Msg) (Model, tea.Cmd) {
+	indexes, cmd := m.indexes.Update(msg)
+	m.indexes = indexes
+	return m, cmd
 }
 
 func (m Model) delegateToColumnsModel(msg tea.Msg) (Model, tea.Cmd) {

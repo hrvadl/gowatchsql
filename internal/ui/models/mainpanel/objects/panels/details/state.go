@@ -10,4 +10,5 @@ type focused int
 const (
 	rowsFocused focused = iota
 	columnsFocused
+	indexesFocused
 )
