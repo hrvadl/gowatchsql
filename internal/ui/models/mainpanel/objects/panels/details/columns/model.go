@@ -3,18 +3,16 @@ package columns
 import (
 	"context"
 	"log/slog"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	xtable "github.com/evertras/bubble-table/table"
+	"github.com/evertras/bubble-table/table"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
+	"github.com/hrvadl/gowatchsql/pkg/xtable"
 )
 
 const margin = 1
@@ -40,7 +38,7 @@ type Model struct {
 	chosen        string
 	engineFactory ExplorerFactory
 	explorer      engine.Explorer
-	table         xtable.Model
+	table         table.Model
 
 	state state
 	err   error
@@ -102,24 +100,10 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 // @TODO: filter columns
 func (m Model) handleFetchedTableContent(msg message.FetchedColumns) (Model, tea.Cmd) {
 	m.state.status = ready
-	keymap := xtable.DefaultKeyMap()
-	keymap.ScrollLeft = key.NewBinding(key.WithKeys(scrollLeft))
-	keymap.ScrollRight = key.NewBinding(key.WithKeys(scrollRight))
-	m.table = xtable.New(m.mapToColumns(msg.Cols)).
-		WithRows(m.mapToRows(msg.Rows)).
-		WithRowStyleFunc(func(rsfi xtable.RowStyleFuncInput) lipgloss.Style {
-			if !rsfi.IsHighlighted {
-				return rsfi.Row.Style
-			}
 
-			return rsfi.Row.Style.Background(color.MainAccent)
-		}).
+	m.table = xtable.New(msg.Cols, msg.Rows).
 		WithMaxTotalWidth(m.width - 1).
-		WithTargetWidth(len(strings.Join(msg.Cols, ""))).
-		WithHorizontalFreezeColumnCount(1).
-		WithBaseStyle(m.newTableStyles()).
-		Focused(true).
-		WithKeyMap(keymap)
+		WithTargetWidth(m.width - 1)
 
 	return m, nil
 }
@@ -176,29 +160,6 @@ func (m *Model) commandFetchTableContent(table string) tea.Cmd {
 	}
 }
 
-func (m Model) mapToColumns(cols []string) []xtable.Column {
-	t := make([]xtable.Column, 0)
-
-	for i, v := range cols {
-		t = append(t, xtable.NewFlexColumn(strconv.Itoa(i), v, 1))
-	}
-	return t
-}
-
-func (m Model) mapToRows(entries []Row) []xtable.Row {
-	rows := make([]xtable.Row, 0)
-
-	for _, row := range entries {
-		rowData := make(map[string]any)
-		for i, data := range row {
-			rowData[strconv.Itoa(i)] = data
-		}
-		rows = append(rows, xtable.NewRow(rowData))
-	}
-
-	return rows
-}
-
 func (m Model) newContainerStyles() lipgloss.Style {
 	base := lipgloss.
 		NewStyle().
@@ -206,13 +167,4 @@ func (m Model) newContainerStyles() lipgloss.Style {
 		Width(m.width)
 
 	return base.BorderForeground(color.Border)
-}
-
-func (m Model) newTableStyles() lipgloss.Style {
-	styleBase := lipgloss.NewStyle().
-		Foreground(color.Text).
-		BorderForeground(color.Border).
-		Align(lipgloss.Right)
-
-	return styleBase
 }
