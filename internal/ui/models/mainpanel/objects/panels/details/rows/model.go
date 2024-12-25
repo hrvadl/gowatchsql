@@ -7,7 +7,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/evertras/bubble-table/table"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
@@ -38,7 +37,7 @@ type Model struct {
 	chosen        string
 	engineFactory ExplorerFactory
 	explorer      engine.Explorer
-	table         table.Model
+	table         xtable.Model
 
 	state state
 	err   error
@@ -102,8 +101,7 @@ func (m Model) handleFetchedTableContent(msg message.FetchedRows) (Model, tea.Cm
 	m.state.status = ready
 
 	m.table = xtable.New(msg.Cols, msg.Rows).
-		WithMaxTotalWidth(m.width - 1).
-		WithTargetWidth(m.width - 1)
+		WithMaxTotalWidth(m.width - 1)
 
 	slog.Info("Scroll keymaps", slog.Any("keys", m.table.KeyMap().ScrollRight.Keys()))
 

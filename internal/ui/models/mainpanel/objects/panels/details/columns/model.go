@@ -7,7 +7,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/evertras/bubble-table/table"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
@@ -38,7 +37,7 @@ type Model struct {
 	chosen        string
 	engineFactory ExplorerFactory
 	explorer      engine.Explorer
-	table         table.Model
+	table         xtable.Model
 
 	state state
 	err   error
@@ -101,9 +100,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 func (m Model) handleFetchedTableContent(msg message.FetchedColumns) (Model, tea.Cmd) {
 	m.state.status = ready
 
-	m.table = xtable.New(msg.Cols, msg.Rows).
-		WithMaxTotalWidth(m.width - 1).
-		WithTargetWidth(m.width - 1)
+	m.table = xtable.New(msg.Cols, msg.Rows).WithMaxTotalWidth(m.width - 1)
 
 	return m, nil
 }
