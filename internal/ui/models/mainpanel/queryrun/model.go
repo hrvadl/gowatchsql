@@ -22,7 +22,7 @@ const (
 	placeholder = "SELECT * FROM"
 )
 
-var inputStyles = lipgloss.NewStyle().MarginTop(margin)
+var inputStyles = lipgloss.NewStyle().MarginTop(margin).PaddingRight(1).Foreground(color.Border)
 
 type ExplorerFactory interface {
 	Create(ctx context.Context, name, dsn string) (engine.Explorer, error)
@@ -85,6 +85,12 @@ func (m Model) View() string {
 		titleText += " - " + m.table
 	}
 
+	inputStyles := inputStyles
+	m.input.TextStyle = m.input.TextStyle.Foreground(color.Border)
+	if m.state.focused == promptFocused && m.state.active {
+		m.input.TextStyle = m.input.TextStyle.Foreground(color.Text)
+	}
+
 	title := titleStyles.Render(titleText)
 	input := inputStyles.Render(m.input.View())
 	return barStyles.Render(title, lipgloss.JoinVertical(lipgloss.Top, input, m.rows.View()))
@@ -123,6 +129,12 @@ func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) delegateToAllModels(msg tea.Msg) (Model, tea.Cmd) {
+	m, rowsCmd := m.delegateToRows(msg)
+	m, inputCmd := m.delegateToPrompt(msg)
+	return m, tea.Batch(rowsCmd, inputCmd)
+}
+
 func (m Model) delegateToPrompt(msg tea.Msg) (Model, tea.Cmd) {
 	input, cmd := m.input.Update(msg)
 	m.input = input
@@ -136,7 +148,10 @@ func (m Model) delegateToRows(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) handleFocus() (Model, tea.Cmd) {
-	m.input.Focus()
+	if m.state.focused == promptFocused {
+		m.input.Focus()
+	}
+
 	m.state.active = true
 	return m, nil
 }
@@ -161,11 +176,9 @@ func (m Model) handleMoveTabFocus() (Model, tea.Cmd) {
 
 func (m Model) handleMoveFocus() (Model, tea.Cmd) {
 	if !m.state.active {
-		slog.Info("Focusing...")
 		return m.handleFocus()
 	}
 
-	slog.Info("Unfocusing...")
 	return m.handleUnfocus()
 }
 
@@ -173,7 +186,8 @@ func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	m.width = msg.Width - 2
 	m.height = msg.Height - 2
 
-	return m.delegateToRows(tea.WindowSizeMsg{Height: msg.Height - 5, Width: msg.Width - 5})
+	m.input.Width = msg.Width - 10
+	return m.delegateToAllModels(tea.WindowSizeMsg{Height: msg.Height - 5, Width: msg.Width - 5})
 }
 
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
