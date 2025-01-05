@@ -68,7 +68,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		message.FetchedRows:
 		return m.delegateToRows(msg)
 	default:
-		return m, nil
+		return m.delegateToActiveModel(msg)
 	}
 }
 
@@ -89,6 +89,23 @@ func (m Model) Value() string {
 	return strings.TrimSpace(m.input.Value())
 }
 
+func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
+	switch m.state.focused {
+	case promptFocused:
+		return m.delegateToPrompt(msg)
+	case tableFocused:
+		return m.delegateToRows(msg)
+	}
+
+	return m, nil
+}
+
+func (m Model) delegateToPrompt(msg tea.Msg) (Model, tea.Cmd) {
+	input, cmd := m.input.Update(msg)
+	m.input = input
+	return m, cmd
+}
+
 func (m Model) delegateToRows(msg tea.Msg) (Model, tea.Cmd) {
 	slog.Info("Delegate to rows", slog.Any("msg", msg))
 	rows, cmd := m.rows.Update(msg)
@@ -102,8 +119,19 @@ func (m Model) handleFocus() (Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) handleMoveTabFocus() (Model, tea.Cmd) {
+	if m.state.focused == promptFocused {
+		m.state.focused = tableFocused
+		m.input.Blur()
+		return m, nil
+	}
+
+	m.input.Focus()
+	m.state.focused = promptFocused
+	return m, nil
+}
+
 func (m Model) handleMoveFocus(to direction.Direction) (Model, tea.Cmd) {
-	m.input.Blur()
 	m.state.active = false
 	return m, message.With(message.MoveFocus{Direction: to})
 }
@@ -116,7 +144,6 @@ func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 	m.input.Blur()
-	m.state.active = false
 	val := m.Value()
 	m.input.SetValue("")
 	m.input.Placeholder = val
@@ -124,19 +151,17 @@ func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
-	var cmd tea.Cmd
 	switch msg.Type {
 	case tea.KeyCtrlC:
 		return Model{}, tea.Quit
 	case tea.KeyEsc:
 		return m.handleMoveFocus(direction.Forward)
-	case tea.KeyShiftTab:
-		return m.handleMoveFocus(direction.Backwards)
+	case tea.KeyShiftTab, tea.KeyTab:
+		return m.handleMoveTabFocus()
 	case tea.KeyEnter:
 		return m.handleKeyEnter()
 	default:
-		m.input, cmd = m.input.Update(msg)
-		return m, cmd
+		return m.delegateToActiveModel(msg)
 	}
 }
 

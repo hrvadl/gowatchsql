@@ -4,7 +4,7 @@ type focused int
 
 const (
 	promptFocused focused = iota
-	tableFocues
+	tableFocused
 )
 
 type state struct {
