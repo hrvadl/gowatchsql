@@ -21,7 +21,7 @@ type mySQLTable struct {
 
 func (e *mySQL) Execute(ctx context.Context, query string) error {
 	if _, err := e.db.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("execute command: %w", err)
+		return fmt.Errorf("execute command %q: %w", query, err)
 	}
 	return nil
 }

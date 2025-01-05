@@ -14,7 +14,6 @@ import (
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/rows"
-	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
 const (
@@ -64,7 +63,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
-		return m.handleMoveFocus(direction.Forward)
+		return m.handleMoveFocus()
 	case message.SelectedTable:
 		m.table = msg.Name
 		return m.delegateToRows(msg)
@@ -131,7 +130,6 @@ func (m Model) delegateToPrompt(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) delegateToRows(msg tea.Msg) (Model, tea.Cmd) {
-	slog.Info("Delegate to rows", slog.Any("msg", msg))
 	rows, cmd := m.rows.Update(msg)
 	m.rows = rows
 	return m, cmd
@@ -161,7 +159,7 @@ func (m Model) handleMoveTabFocus() (Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) handleMoveFocus(to direction.Direction) (Model, tea.Cmd) {
+func (m Model) handleMoveFocus() (Model, tea.Cmd) {
 	if !m.state.active {
 		slog.Info("Focusing...")
 		return m.handleFocus()
@@ -206,7 +204,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 	case tea.KeyCtrlC:
 		return Model{}, tea.Quit
 	case tea.KeyEsc:
-		return m.handleMoveFocus(direction.Forward)
+		return m.handleMoveFocus()
 	case tea.KeyShiftTab, tea.KeyTab:
 		return m.handleMoveTabFocus()
 	case tea.KeyEnter:
