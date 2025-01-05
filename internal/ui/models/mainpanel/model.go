@@ -27,7 +27,7 @@ func NewModel(explorerFactory ExplorerFactory, connections ConnectionsRepo) Mode
 	return Model{
 		objects:  objects.NewModel(explorerFactory),
 		contexts: contexts.NewModel(connections),
-		queryrun: queryrun.NewModel(),
+		queryrun: queryrun.NewModel(explorerFactory),
 	}
 }
 
@@ -58,7 +58,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		message.FetchedTableList,
 		message.FetchedIndexes,
 		message.FetchedConstraints:
-		return m.delegateToObjectsModel(msg)
+		return m.delegateToAllModels(msg)
 	case message.Command:
 		return m.handleCommand(msg)
 	case message.Error:
@@ -96,6 +96,8 @@ func (m Model) handleCommand(msg message.Command) (Model, tea.Cmd) {
 	switch msg.Text {
 	case command.Tables:
 		m.state.active = objectsActive
+	case command.Query:
+		m.state.active = queryRunActive
 	case command.Context:
 		m.state.active = contextsActive
 	case command.Exit:
@@ -108,7 +110,7 @@ func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) delegateToAllModels(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
+func (m Model) delegateToAllModels(msg tea.Msg) (Model, tea.Cmd) {
 	m, objCmd := m.delegateToObjectsModel(msg)
 	m, contextsCmd := m.delegateToContextsModel(msg)
 	m, queryRunCmd := m.delegateToQueryRunModel(msg)
