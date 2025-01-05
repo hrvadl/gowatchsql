@@ -10,4 +10,5 @@ const (
 type state struct {
 	active  bool
 	focused focused
+	err     error
 }

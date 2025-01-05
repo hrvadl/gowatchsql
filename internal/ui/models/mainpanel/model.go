@@ -62,7 +62,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case message.Command:
 		return m.handleCommand(msg)
 	case message.Error:
-		return m.handleError(msg)
+		return m.delegateToActiveModel(msg)
 	default:
 		return m.delegateToActiveModel(msg)
 	}
@@ -104,10 +104,6 @@ func (m Model) handleCommand(msg message.Command) (Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 	return m, message.With(message.MoveFocus{Direction: direction.Forward})
-}
-
-func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
-	return m, nil
 }
 
 func (m Model) delegateToAllModels(msg tea.Msg) (Model, tea.Cmd) {

@@ -65,12 +65,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case message.MoveFocus:
 		return m.handleMoveFocus()
 	case message.SelectedTable:
+		m.state.err = nil
 		m.table = msg.Name
 		return m.delegateToRows(msg)
 	case message.SelectedContext:
 		return m.handleSelectedContext(msg)
 	case message.FetchedRows:
 		return m.delegateToRows(msg)
+	case message.Error:
+		return m.handleError(msg)
 	default:
 		return m.delegateToActiveModel(msg)
 	}
@@ -87,8 +90,14 @@ func (m Model) View() string {
 
 	inputStyles := inputStyles
 	m.input.TextStyle = m.input.TextStyle.Foreground(color.Border)
-	if m.state.focused == promptFocused && m.state.active {
+	if m.state.focused == promptFocused {
 		m.input.TextStyle = m.input.TextStyle.Foreground(color.Text)
+	}
+
+	slog.Info("Rendering query view", slog.Any("err", m.state.err))
+	if m.state.err != nil {
+		m.input.Placeholder = m.state.err.Error()
+		m.input.PlaceholderStyle = m.input.PlaceholderStyle.Foreground(color.Error)
 	}
 
 	title := titleStyles.Render(titleText)
@@ -190,6 +199,11 @@ func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	return m.delegateToAllModels(tea.WindowSizeMsg{Height: msg.Height - 5, Width: msg.Width - 5})
 }
 
+func (m Model) handleError(msg message.Error) (Model, tea.Cmd) {
+	m.state.err = msg.Err
+	return m, nil
+}
+
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 	m.input.Blur()
 	query := m.Value()
@@ -200,13 +214,15 @@ func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 
 	m.input.SetValue("")
 	m.input.Placeholder = query
+	m.state.focused = tableFocused
 
 	return m, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
 
 		if err := m.explorer.Execute(ctx, query); err != nil {
-			slog.Error("Execute query", slog.Any("err", err))
+			slog.Error("Execute query", slog.Any("err", err), slog.Any("state", m.state))
+			return message.Error{Err: err}
 		}
 
 		return message.SelectedTable{Name: m.table}
