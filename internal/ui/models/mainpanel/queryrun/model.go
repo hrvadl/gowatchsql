@@ -164,9 +164,10 @@ func (m Model) handleMoveFocus(to direction.Direction) (Model, tea.Cmd) {
 }
 
 func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
-	m.width = msg.Width
-	m.height = msg.Height
-	return m.delegateToRows(msg)
+	m.width = msg.Width - 2
+	m.height = msg.Height - 2
+
+	return m.delegateToRows(tea.WindowSizeMsg{Height: msg.Height - 10, Width: msg.Width - 10})
 }
 
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
