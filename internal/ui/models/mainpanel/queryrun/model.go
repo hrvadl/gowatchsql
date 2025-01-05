@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine"
 	"github.com/hrvadl/gowatchsql/internal/ui/color"
-	"github.com/hrvadl/gowatchsql/internal/ui/command"
 	"github.com/hrvadl/gowatchsql/internal/ui/message"
 	"github.com/hrvadl/gowatchsql/internal/ui/models/mainpanel/objects/panels/details/rows"
 	"github.com/hrvadl/gowatchsql/pkg/direction"
@@ -34,9 +34,11 @@ func NewModel(ef ExplorerFactory) Model {
 	input.Focus()
 	input.Placeholder = placeholder
 	input.PromptStyle = lipgloss.NewStyle().Foreground(color.MainAccent)
+
 	return Model{
-		input: input,
-		rows:  rows.NewModel(ef),
+		input:           input,
+		rows:            rows.NewModel(ef),
+		explorerFactory: ef,
 		state: state{
 			active: true,
 		},
@@ -44,11 +46,14 @@ func NewModel(ef ExplorerFactory) Model {
 }
 
 type Model struct {
-	width  int
-	height int
-	state  state
-	input  textinput.Model
-	rows   rows.Model
+	width           int
+	height          int
+	state           state
+	input           textinput.Model
+	explorerFactory ExplorerFactory
+	explorer        engine.Explorer
+	rows            rows.Model
+	table           string
 }
 
 func (m Model) Init() tea.Cmd {
@@ -63,9 +68,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
 		return m.handleFocus()
-	case message.SelectedContext,
-		message.SelectedTable,
-		message.FetchedRows:
+	case message.SelectedTable:
+		m.table = msg.Name
+		return m.delegateToRows(msg)
+	case message.SelectedContext:
+		return m.handleSelectedContext(msg)
+	case message.FetchedRows:
 		return m.delegateToRows(msg)
 	default:
 		return m.delegateToActiveModel(msg)
@@ -76,7 +84,12 @@ func (m Model) View() string {
 	barStyles := m.newBarStyles()
 	titleStyles := m.newTitleStyles()
 
-	title := titleStyles.Render("Query prompt")
+	titleText := "Query prompt"
+	if m.table != "" {
+		titleText += " - " + m.table
+	}
+
+	title := titleStyles.Render(titleText)
 	input := inputStyles.Render(m.input.View())
 	return barStyles.Render(title, lipgloss.JoinVertical(lipgloss.Top, input, m.rows.View()))
 }
@@ -87,6 +100,20 @@ func (m Model) Help() string {
 
 func (m Model) Value() string {
 	return strings.TrimSpace(m.input.Value())
+}
+
+func (m Model) handleSelectedContext(msg message.SelectedContext) (Model, tea.Cmd) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	defer cancel()
+
+	explorer, err := m.explorerFactory.Create(ctx, msg.Name, msg.DSN)
+	if err != nil {
+		return m, nil
+	}
+
+	m.explorer = explorer
+
+	return m.delegateToRows(msg)
 }
 
 func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
@@ -144,10 +171,25 @@ func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
 	m.input.Blur()
-	val := m.Value()
+	query := m.Value()
+
+	if m.state.focused != promptFocused {
+		return m, nil
+	}
+
 	m.input.SetValue("")
-	m.input.Placeholder = val
-	return m, message.With(message.Command{Text: command.Command(val)})
+	m.input.Placeholder = query
+
+	return m, func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+
+		if err := m.explorer.Execute(ctx, query); err != nil {
+			slog.Error("Execute query", slog.Any("err", err))
+		}
+
+		return message.SelectedTable{Name: m.table}
+	}
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {

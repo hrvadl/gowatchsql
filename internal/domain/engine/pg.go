@@ -19,6 +19,13 @@ type postgreSQLTable struct {
 	Schema string `db:"schemaname"`
 }
 
+func (e *postgreSQL) Execute(ctx context.Context, query string) error {
+	if _, err := e.db.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("execute command: %w", err)
+	}
+	return nil
+}
+
 func (e *postgreSQL) GetColumns(ctx context.Context, table string) ([]Row, []Column, error) {
 	const queryFmt = `
 		SELECT *

@@ -67,6 +67,10 @@ type (
 		Name string
 	}
 
+	ExecuteCommand struct {
+		Cmd string
+	}
+
 	MoveFocus struct {
 		Direction direction.Direction
 	}

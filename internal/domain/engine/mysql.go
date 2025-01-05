@@ -19,6 +19,13 @@ type mySQLTable struct {
 	Type string `db:"TABLE_TYPE"`
 }
 
+func (e *mySQL) Execute(ctx context.Context, query string) error {
+	if _, err := e.db.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("execute command: %w", err)
+	}
+	return nil
+}
+
 func (e *mySQL) GetTables(ctx context.Context) ([]Table, error) {
 	const query = `
 		SELECT TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES 
