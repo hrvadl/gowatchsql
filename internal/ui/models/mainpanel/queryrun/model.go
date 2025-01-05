@@ -39,9 +39,6 @@ func NewModel(ef ExplorerFactory) Model {
 		input:           input,
 		rows:            rows.NewModel(ef),
 		explorerFactory: ef,
-		state: state{
-			active: true,
-		},
 	}
 }
 
@@ -67,7 +64,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 	case message.MoveFocus:
-		return m.handleFocus()
+		return m.handleMoveFocus(direction.Forward)
 	case message.SelectedTable:
 		m.table = msg.Name
 		return m.delegateToRows(msg)
@@ -146,6 +143,12 @@ func (m Model) handleFocus() (Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) handleUnfocus() (Model, tea.Cmd) {
+	m.input.Blur()
+	m.state.active = false
+	return m, nil
+}
+
 func (m Model) handleMoveTabFocus() (Model, tea.Cmd) {
 	if m.state.focused == promptFocused {
 		m.state.focused = tableFocused
@@ -159,15 +162,20 @@ func (m Model) handleMoveTabFocus() (Model, tea.Cmd) {
 }
 
 func (m Model) handleMoveFocus(to direction.Direction) (Model, tea.Cmd) {
-	m.state.active = false
-	return m, message.With(message.MoveFocus{Direction: to})
+	if !m.state.active {
+		slog.Info("Focusing...")
+		return m.handleFocus()
+	}
+
+	slog.Info("Unfocusing...")
+	return m.handleUnfocus()
 }
 
 func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 	m.width = msg.Width - 2
 	m.height = msg.Height - 2
 
-	return m.delegateToRows(tea.WindowSizeMsg{Height: msg.Height - 10, Width: msg.Width - 10})
+	return m.delegateToRows(tea.WindowSizeMsg{Height: msg.Height - 5, Width: msg.Width - 5})
 }
 
 func (m Model) handleKeyEnter() (Model, tea.Cmd) {
