@@ -12,3 +12,9 @@ tasks:
     desc: "Run program"
     cmds:
       - cmd: tail -f debug.log
+  sqlite:
+    desc: "Re-init SQLite DB"
+    cmds:
+      - rm -rf ./test.db
+      - touch ./test.db
+      - sqlite3 ./test.db < ./build/sqlite/init.sql

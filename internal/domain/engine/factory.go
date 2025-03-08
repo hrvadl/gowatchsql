@@ -13,6 +13,8 @@ import (
 const (
 	mysqlDB      = "mysql"
 	postgresqlDB = "postgres"
+	fileDBSuffix = ".db"
+	sqliteDB     = "sqlite3"
 )
 
 var ErrUnknownDB = errors.New("unknown database")
@@ -49,11 +51,22 @@ func (f *Factory) Create(ctx context.Context, name, dsn string) (Explorer, error
 	switch {
 	case strings.HasPrefix(dsn, postgresqlDB):
 		return f.createPostgres(ctx, name, dsn)
+	case strings.Contains(dsn, fileDBSuffix):
+		return f.createSQLite(ctx, name, dsn)
 	case strings.HasPrefix(dsn, mysqlDB) || !strings.HasPrefix(dsn, "://"):
 		return f.createMySQL(ctx, name, cleanDBType(dsn))
 	default:
 		return nil, ErrUnknownDB
 	}
+}
+
+func (f *Factory) createSQLite(ctx context.Context, name, file string) (*sqlite, error) {
+	db, err := f.pool.Get(ctx, name, sqliteDB, file)
+	if err != nil {
+		return nil, fmt.Errorf("connect to sqlite: %w", err)
+	}
+
+	return &sqlite{db, file}, nil
 }
 
 func (f *Factory) createPostgres(ctx context.Context, name, dsn string) (*postgreSQL, error) {
