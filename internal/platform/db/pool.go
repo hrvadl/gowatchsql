@@ -7,6 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/hrvadl/gowatchsql/internal/platform/cfg"
@@ -32,6 +33,10 @@ func (p *Pool) Get(ctx context.Context, name, driver, dsn string) (*sqlx.DB, err
 	conn, err := sqlx.ConnectContext(ctx, driver, dsn)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := conn.Ping(); err != nil {
+		return nil, fmt.Errorf("ping: %w", err)
 	}
 
 	p.opened[dsn] = conn

@@ -2,6 +2,7 @@ package contexts
 
 import (
 	"context"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -22,6 +23,7 @@ const margin = 1
 
 type ConnectionsReppo interface {
 	GetConnections(context.Context) []cfg.Connection
+	DeleteConnection(ctx context.Context, dsn string) error
 }
 
 func NewModel(connections ConnectionsReppo) *Model {
@@ -155,6 +157,16 @@ func (m Model) handleKeyRunes(msg tea.KeyMsg) (Model, tea.Cmd) {
 func (m Model) handleDeleteContext() (Model, tea.Cmd) {
 	items := m.List.Items()
 	idx := m.List.Index()
+
+	fv, ok := m.List.Items()[idx].(ctxItem)
+	if !ok {
+		return m, m.List.SetItems(slices.Delete(items, idx, idx+1))
+	}
+
+	if err := m.connections.DeleteConnection(context.Background(), fv.Description()); err != nil {
+		slog.Error("Delete connection", slog.Any("err", err))
+	}
+
 	return m, m.List.SetItems(slices.Delete(items, idx, idx+1))
 }
 

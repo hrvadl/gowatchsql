@@ -23,6 +23,7 @@ type ExplorerFactory interface {
 
 type ConnectionsRepo interface {
 	GetConnections(context.Context) []cfg.Connection
+	DeleteConnection(ctx context.Context, dsn string) error
 }
 
 func NewModel(log *slog.Logger, ef ExplorerFactory, connections ConnectionsRepo) Model {

@@ -21,6 +21,7 @@ type ExplorerFactory interface {
 
 type ConnectionsRepo interface {
 	GetConnections(context.Context) []cfg.Connection
+	DeleteConnection(ctx context.Context, dsn string) error
 }
 
 func NewModel(explorerFactory ExplorerFactory, connections ConnectionsRepo) Model {

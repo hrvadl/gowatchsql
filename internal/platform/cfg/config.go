@@ -66,6 +66,11 @@ func (c *Config) AddConnection(ctx context.Context, name, dsn string) error {
 	return c.Save()
 }
 
+func (c *Config) DeleteConnection(ctx context.Context, dsn string) error {
+	delete(c.Connections, dsn)
+	return c.Save()
+}
+
 func (c *Config) GetConnections(context.Context) []Connection {
 	conns := maps.Values(c.Connections)
 	slices.SortStableFunc(conns, func(a, b Connection) int {
