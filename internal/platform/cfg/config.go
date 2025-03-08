@@ -12,6 +12,8 @@ import (
 
 	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
+
+	"github.com/hrvadl/gowatchsql/internal/domain/errs"
 )
 
 const (
@@ -62,6 +64,14 @@ type Connection struct {
 }
 
 func (c *Config) AddConnection(ctx context.Context, name, dsn string) error {
+	if name == "" {
+		return fmt.Errorf("%w: name is required", errs.ErrValidation)
+	}
+
+	if dsn == "" {
+		return fmt.Errorf("%w: dsn is required", errs.ErrValidation)
+	}
+
 	c.Connections[dsn] = Connection{Name: name, DSN: dsn, LastUsedAt: time.Now()}
 	return c.Save()
 }
