@@ -2,12 +2,13 @@ package engine
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+
+	"github.com/hrvadl/gowatchsql/internal/domain/errs"
 )
 
 const (
@@ -16,8 +17,6 @@ const (
 	fileDBSuffix = ".db"
 	sqliteDB     = "sqlite3"
 )
-
-var ErrUnknownDB = errors.New("unknown database")
 
 type Explorer interface {
 	GetTables(ctx context.Context) ([]Table, error)
@@ -39,6 +38,7 @@ func NewFactory(pool Pool) *Factory {
 	}
 }
 
+//go:generate mockgen -destination=mocks/mock_pool.go -package=mocks . Pool
 type Pool interface {
 	Get(ctx context.Context, name, driver, dsn string) (*sqlx.DB, error)
 }
@@ -48,6 +48,14 @@ type Factory struct {
 }
 
 func (f *Factory) Create(ctx context.Context, name, dsn string) (Explorer, error) {
+	if dsn == "" {
+		return nil, fmt.Errorf("%w: dsn is required", errs.ErrValidation)
+	}
+
+	if name == "" {
+		return nil, fmt.Errorf("%w: name is required", errs.ErrValidation)
+	}
+
 	switch {
 	case strings.HasPrefix(dsn, postgresqlDB):
 		return f.createPostgres(ctx, name, dsn)
@@ -56,7 +64,7 @@ func (f *Factory) Create(ctx context.Context, name, dsn string) (Explorer, error
 	case strings.HasPrefix(dsn, mysqlDB) || !strings.HasPrefix(dsn, "://"):
 		return f.createMySQL(ctx, name, cleanDBType(dsn))
 	default:
-		return nil, ErrUnknownDB
+		return nil, fmt.Errorf("%w: unsupported database type", errs.ErrValidation)
 	}
 }
 
