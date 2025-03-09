@@ -10,10 +10,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/hrvadl/gowatchsql/internal/platform/cfg"
+	"github.com/hrvadl/gowatchsql/internal/domain/errs"
 )
 
-func NewPool(cfg *cfg.Config) *Pool {
+//go:generate mockgen -destination=mocks/mock_config_repository.go -package=mocks . ConfigRepository
+type ConfigRepository interface {
+	AddConnection(ctx context.Context, name, dsn string) error
+}
+
+func NewPool(cfg ConfigRepository) *Pool {
 	return &Pool{
 		opened: make(map[string]*sqlx.DB),
 		cfg:    cfg,
@@ -22,10 +27,22 @@ func NewPool(cfg *cfg.Config) *Pool {
 
 type Pool struct {
 	opened map[string]*sqlx.DB
-	cfg    *cfg.Config
+	cfg    ConfigRepository
 }
 
 func (p *Pool) Get(ctx context.Context, name, driver, dsn string) (*sqlx.DB, error) {
+	if name == "" {
+		return nil, fmt.Errorf("%w: name is required", errs.ErrValidation)
+	}
+
+	if driver == "" {
+		return nil, fmt.Errorf("%w: driver is required", errs.ErrValidation)
+	}
+
+	if dsn == "" {
+		return nil, fmt.Errorf("%w: dsn is required", errs.ErrValidation)
+	}
+
 	if conn, opened := p.opened[dsn]; opened {
 		return conn, nil
 	}
@@ -35,9 +52,9 @@ func (p *Pool) Get(ctx context.Context, name, driver, dsn string) (*sqlx.DB, err
 		return nil, err
 	}
 
-	if err := conn.Ping(); err != nil {
-		return nil, fmt.Errorf("ping: %w", err)
-	}
+	//	if err := conn.Ping(); err != nil {
+	//		return nil, fmt.Errorf("ping: %w", err)
+	//	}
 
 	p.opened[dsn] = conn
 	if err := p.cfg.AddConnection(ctx, name, dsn); err != nil {

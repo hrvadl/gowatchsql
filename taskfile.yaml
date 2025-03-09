@@ -12,6 +12,10 @@ tasks:
     desc: "Run program"
     cmds:
       - cmd: tail -f debug.log
+  gen:
+    desc: "Generate mocks"
+    cmds:
+      - cmd: go generate ./...
   sqlite:
     desc: "Re-init SQLite DB"
     cmds:
