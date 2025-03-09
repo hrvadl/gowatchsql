@@ -53,6 +53,10 @@ func (e *sqlite) toTables(tables []sqliteTable) []Table {
 
 func (e *sqlite) GetColumns(ctx context.Context, table string) ([]Row, []Column, error) {
 	query := fmt.Sprintf("PRAGMA table_info('%s')", table)
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
+
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {
 		return nil, nil, err
@@ -103,6 +107,10 @@ func (e *sqlite) GetRows(ctx context.Context, table string) ([]Row, []Column, er
 
 func (e *sqlite) GetIndexes(ctx context.Context, table string) ([]Row, []Column, error) {
 	query := fmt.Sprintf("PRAGMA index_list('%s')", table)
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
+
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {
 		return nil, nil, err
@@ -130,6 +138,10 @@ func (e *sqlite) GetConstraints(ctx context.Context, table string) ([]Row, []Col
 	// SQLite doesn't have an information_schema equivalent for constraints
 	// We can get foreign key constraints using PRAGMA
 	query := fmt.Sprintf("PRAGMA foreign_key_list('%s')", table)
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
+
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {
 		return nil, nil, err
