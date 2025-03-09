@@ -2,14 +2,78 @@ package engine
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/mysql"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine/mocks"
 )
+
+func TestMain(m *testing.M) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	var (
+		mysql    *mysql.MySQLContainer
+		postgres *postgres.PostgresContainer
+	)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		var err error
+		mysql, err = newTestMySQL(ctx)
+		if err != nil {
+			return fmt.Errorf("start mysql container: %w", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		var err error
+		postgres, err = newTestPostgreSQL(ctx)
+		if err != nil {
+			return fmt.Errorf("start postgres container: %w", err)
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		log.Fatal("Could not start container: ", err)
+	}
+
+	defer func() {
+		var g errgroup.Group
+		g.Go(func() error {
+			if err := testcontainers.TerminateContainer(mysql); err != nil {
+				return fmt.Errorf("terminate mysql container: %w", err)
+			}
+			return nil
+		})
+
+		g.Go(func() error {
+			if err := testcontainers.TerminateContainer(postgres); err != nil {
+				return fmt.Errorf("terminate postgres container: %w", err)
+			}
+			return nil
+		})
+
+		if err := g.Wait(); err != nil {
+			log.Fatal("Could not terminate container: ", err)
+		}
+	}()
+
+	os.Exit(m.Run())
+}
 
 func TestNewFactory(t *testing.T) {
 	t.Parallel()

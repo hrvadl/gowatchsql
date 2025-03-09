@@ -57,6 +57,9 @@ func (e *mySQL) GetColumns(ctx context.Context, table string) ([]Row, []Column, 
 		WHERE table_name = '%s'
 		`
 	query := strings.TrimSpace(fmt.Sprintf(queryFmt, table))
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
 
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {
@@ -125,6 +128,9 @@ func (e *mySQL) GetIndexes(ctx context.Context, table string) ([]Row, []Column, 
 		WHERE TABLE_NAME = '%s'
 	`
 	query := fmt.Sprintf(queryFmt, table)
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
 
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {
@@ -162,6 +168,9 @@ func (e *mySQL) GetConstraints(ctx context.Context, table string) ([]Row, []Colu
 		AND    table_name = '%s';
 	`
 	query := fmt.Sprintf(queryFmt, table)
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
 
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {

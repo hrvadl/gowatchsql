@@ -33,6 +33,9 @@ func (e *postgreSQL) GetColumns(ctx context.Context, table string) ([]Row, []Col
     WHERE table_name   = '%s'
 		`
 	query := strings.TrimSpace(fmt.Sprintf(queryFmt, table))
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
 
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {
@@ -128,6 +131,9 @@ func (e *postgreSQL) GetIndexes(ctx context.Context, table string) ([]Row, []Col
 		WHERE tablename = '%s'
 	`
 	query := fmt.Sprintf(queryFmt, table)
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
 
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {
@@ -164,6 +170,9 @@ func (e *postgreSQL) GetConstraints(ctx context.Context, table string) ([]Row, [
 		WHERE r.conrelid in ('%s'::regclass)
 	`
 	query := fmt.Sprintf(queryFmt, table)
+	if _, _, err := e.GetRows(ctx, table); err != nil {
+		return nil, nil, fmt.Errorf("table may not exist: %w", err)
+	}
 
 	entries, err := e.db.QueryxContext(ctx, query)
 	if err != nil {
