@@ -29,7 +29,7 @@ tasks:
   unit-test:
     desc: "Run unit tests"
     env:
-      DOCKER_HOST: "unix://${HOME}/.config/colima/docker.sock"
+      DOCKER_HOST: "unix://{{ .HOME }}/.config/colima/docker.sock"
       TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"
     cmds:
       - go test ./...
