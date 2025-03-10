@@ -8,17 +8,28 @@ tasks:
       - cmd: rm -rf debug.log
         ignore_error: true
       - go run .
+
   logs:
     desc: "Run program"
     cmds:
       - cmd: tail -f debug.log
+
   gen:
     desc: "Generate mocks"
     cmds:
       - cmd: go generate ./...
+
   sqlite:
     desc: "Re-init SQLite DB"
     cmds:
       - rm -rf ./test.db
       - touch ./test.db
       - sqlite3 ./test.db < ./build/sqlite/init.sql
+
+  unit-test:
+    desc: "Run unit tests"
+    env:
+      DOCKER_HOST: "unix://${HOME}/.config/colima/docker.sock"
+      TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"
+    cmds:
+      - go test ./...

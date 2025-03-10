@@ -72,11 +72,8 @@ func TestNewFromFileWithIncorrectConfig(t *testing.T) {
 	require.NoError(t, f.Close(), "Не вдалося закрити файл")
 
 	cfg, err := NewFromFile(tmpDir)
-	t.Cleanup(func() {
-		require.NoError(t, cfg.Close(), "Не вдалося закрити файл")
-	})
-
 	require.Error(t, err)
+	require.Nil(t, cfg)
 }
 
 func TestConfigSave(t *testing.T) {
