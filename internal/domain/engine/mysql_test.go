@@ -35,7 +35,7 @@ func Test_mySQL_Execute(t *testing.T) {
 			name: "Should execute query",
 			args: args{
 				ctx:   t.Context(),
-				query: "CREATE TABLE test_table (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100))",
+				query: "DROP TABLE IF EXISTS users",
 			},
 			wantErr: false,
 		},
