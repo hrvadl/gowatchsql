@@ -9,9 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+
+	"github.com/hrvadl/gowatchsql/pkg/xtest"
 )
 
 func TestNewFromFileWithCorrectConfig(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	now := time.Now().UTC()
 	tmpDir := t.TempDir()
 	base := filepath.Join(tmpDir, dir)
@@ -49,12 +52,14 @@ func TestNewFromFileWithCorrectConfig(t *testing.T) {
 }
 
 func TestNewFromFileWithIncorrectFilepath(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	tmpDir := "/incorrect/path"
 	_, err := NewFromFile(tmpDir)
 	require.Error(t, err)
 }
 
 func TestNewFromFileWithIncorrectConfig(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	tmpDir := t.TempDir()
 	base := filepath.Join(tmpDir, dir)
 	configPath := filepath.Join(tmpDir, dir, filename)
@@ -77,6 +82,7 @@ func TestNewFromFileWithIncorrectConfig(t *testing.T) {
 }
 
 func TestConfigSave(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	tmpDir := t.TempDir()
 
 	conn := Connection{
@@ -86,7 +92,8 @@ func TestConfigSave(t *testing.T) {
 
 	cfg, err := NewFromFile(tmpDir)
 	require.NoError(t, err)
-	cfg.AddConnection(t.Context(), conn.Name, conn.DSN)
+	err = cfg.AddConnection(t.Context(), conn.Name, conn.DSN)
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		require.NoError(t, cfg.Close(), "Не вдалося закрити файл")
 	})
@@ -103,6 +110,7 @@ func TestConfigSave(t *testing.T) {
 }
 
 func TestConfig_GetConnections(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	now := time.Now().UTC()
 
 	var (
@@ -133,6 +141,7 @@ func TestConfig_GetConnections(t *testing.T) {
 }
 
 func TestConfigAddConnection(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	tmpDir := t.TempDir()
 
 	conn := Connection{
@@ -142,7 +151,8 @@ func TestConfigAddConnection(t *testing.T) {
 
 	cfg, err := NewFromFile(tmpDir)
 	require.NoError(t, err)
-	cfg.AddConnection(t.Context(), conn.Name, conn.DSN)
+	err = cfg.AddConnection(t.Context(), conn.Name, conn.DSN)
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		require.NoError(t, cfg.Close(), "Не вдалося закрити файл")
 	})
@@ -159,6 +169,7 @@ func TestConfigAddConnection(t *testing.T) {
 }
 
 func TestConfigAddConnectionIncorrectName(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	tmpDir := t.TempDir()
 
 	conn := Connection{
@@ -172,6 +183,7 @@ func TestConfigAddConnectionIncorrectName(t *testing.T) {
 }
 
 func TestConfigAddConnectionIncorrectDSN(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	tmpDir := t.TempDir()
 
 	conn := Connection{
@@ -185,6 +197,7 @@ func TestConfigAddConnectionIncorrectDSN(t *testing.T) {
 }
 
 func TestConfigAddConnectionClose(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	cfg, err := NewFromFile(t.TempDir())
 	require.NoError(t, err)
 	cfg.Close()

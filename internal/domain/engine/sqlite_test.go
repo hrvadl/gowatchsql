@@ -10,9 +10,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hrvadl/gowatchsql/pkg/xtest"
 )
 
 func Test_sqlite_Execute(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		query string
@@ -62,6 +65,7 @@ func Test_sqlite_Execute(t *testing.T) {
 }
 
 func Test_sqlite_GetTables(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx    context.Context
 		schema string
@@ -110,6 +114,7 @@ func Test_sqlite_GetTables(t *testing.T) {
 }
 
 func Test_sqlite_GetColumns(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string
@@ -178,6 +183,7 @@ func Test_sqlite_GetColumns(t *testing.T) {
 }
 
 func Test_sqlite_GetRows(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string
@@ -236,6 +242,7 @@ func Test_sqlite_GetRows(t *testing.T) {
 }
 
 func Test_sqlite_GetConstraints(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string

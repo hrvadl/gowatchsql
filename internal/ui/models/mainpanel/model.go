@@ -15,10 +15,12 @@ import (
 	"github.com/hrvadl/gowatchsql/pkg/direction"
 )
 
+//go:generate mockgen -destination=mocks/mock_factory.go -package=mocks . ExplorerFactory
 type ExplorerFactory interface {
 	Create(ctx context.Context, name, dsn string) (engine.Explorer, error)
 }
 
+//go:generate mockgen -destination=mocks/mock_repo.go -package=mocks . ConnectionsRepo
 type ConnectionsRepo interface {
 	GetConnections(context.Context) []cfg.Connection
 	DeleteConnection(ctx context.Context, dsn string) error
@@ -44,7 +46,12 @@ func (m Model) Init() tea.Cmd {
 	return b
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	mm, cmd := m.update(msg)
+	return mm, cmd
+}
+
+func (m Model) update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.delegateToAllModels(msg)
@@ -135,7 +142,7 @@ func (m Model) delegateToObjectsModel(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) delegateToContextsModel(msg tea.Msg) (Model, tea.Cmd) {
 	model, cmd := m.contexts.Update(msg)
-	m.contexts = &model
+	m.contexts = model.(*contexts.Model)
 	return m, cmd
 }
 

@@ -17,6 +17,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/hrvadl/gowatchsql/internal/domain/engine/mocks"
+	"github.com/hrvadl/gowatchsql/pkg/xtest"
 )
 
 func TestMain(m *testing.M) {
@@ -76,6 +77,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestNewFactory(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	t.Parallel()
 	type args struct {
 		pool Pool
@@ -106,6 +108,7 @@ func TestNewFactory(t *testing.T) {
 }
 
 func TestFactory_Create(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	t.Parallel()
 	type fields struct {
 		pool func(ctrl *gomock.Controller) Pool

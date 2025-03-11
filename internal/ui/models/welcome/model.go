@@ -128,7 +128,7 @@ func (m Model) handleUpdateSize(msg tea.WindowSizeMsg) (Model, tea.Cmd) {
 		Width:  msg.Width,
 		Height: msg.Height - searchBarHeight - 1,
 	})
-	m.main = main
+	m.main = main.(mainpanel.Model)
 
 	return m, tea.Batch(searchCmd, mainCmd)
 }
@@ -237,7 +237,7 @@ func (m Model) delegateToCommand(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) delegateToMainPanel(msg tea.Msg) (Model, tea.Cmd) {
 	main, cmd := m.main.Update(msg)
-	m.main = main
+	m.main = main.(mainpanel.Model)
 	return m, cmd
 }
 

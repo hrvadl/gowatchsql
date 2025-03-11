@@ -18,6 +18,7 @@ const (
 	sqliteDB     = "sqlite3"
 )
 
+//go:generate mockgen -destination=mock_factory.go -package=engine . Explorer
 type Explorer interface {
 	GetTables(ctx context.Context) ([]Table, error)
 	GetRows(ctx context.Context, table string) ([]Row, []Column, error)

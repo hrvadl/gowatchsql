@@ -10,6 +10,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
+
+	"github.com/hrvadl/gowatchsql/pkg/xtest"
 )
 
 const (
@@ -22,6 +24,7 @@ const cleanupTimeout = time.Second * 10
 var mysqlTestDSN string
 
 func Test_mySQL_Execute(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		query string
@@ -71,6 +74,7 @@ func Test_mySQL_Execute(t *testing.T) {
 }
 
 func Test_mySQL_GetTables(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx    context.Context
 		schema string
@@ -127,6 +131,7 @@ func Test_mySQL_GetTables(t *testing.T) {
 }
 
 func Test_mySQL_GetColumns(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string
@@ -195,6 +200,7 @@ func Test_mySQL_GetColumns(t *testing.T) {
 }
 
 func Test_mySQL_GetRows(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string
@@ -253,6 +259,7 @@ func Test_mySQL_GetRows(t *testing.T) {
 }
 
 func Test_mySQL_GetIndexes(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string
@@ -311,6 +318,7 @@ func Test_mySQL_GetIndexes(t *testing.T) {
 }
 
 func Test_mySQL_GetConstraints(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string

@@ -12,9 +12,11 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/hrvadl/gowatchsql/internal/platform/db/mocks"
+	"github.com/hrvadl/gowatchsql/pkg/xtest"
 )
 
 func TestNewPool(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	t.Parallel()
 	type args struct {
 		cfg ConfigRepository
@@ -46,6 +48,7 @@ func TestNewPool(t *testing.T) {
 }
 
 func TestPool_Close(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	t.Parallel()
 	type fields struct {
 		opened map[string]*sqlx.DB
@@ -79,6 +82,7 @@ func TestPool_Close(t *testing.T) {
 }
 
 func TestPool_Get(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	t.Parallel()
 	type fields struct {
 		opened map[string]*sqlx.DB

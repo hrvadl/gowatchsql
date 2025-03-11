@@ -186,7 +186,7 @@ func (m Model) delegateToActiveModel(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) delegateToDetailsModel(msg tea.Msg) (Model, tea.Cmd) {
 	model, cmd := m.details.Update(msg)
-	m.details = model
+	m.details = model.(details.Model)
 	return m, cmd
 }
 

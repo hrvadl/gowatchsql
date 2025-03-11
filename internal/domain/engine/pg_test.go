@@ -10,11 +10,14 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+
+	"github.com/hrvadl/gowatchsql/pkg/xtest"
 )
 
 var postgresTestDSN string
 
 func Test_postgreSQL_Execute(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		query string
@@ -64,6 +67,7 @@ func Test_postgreSQL_Execute(t *testing.T) {
 }
 
 func Test_postgreSQL_GetTables(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx    context.Context
 		schema string
@@ -112,6 +116,7 @@ func Test_postgreSQL_GetTables(t *testing.T) {
 }
 
 func Test_postgreSQL_GetColumns(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string
@@ -180,6 +185,7 @@ func Test_postgreSQL_GetColumns(t *testing.T) {
 }
 
 func Test_postgreSQL_GetRows(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string
@@ -238,6 +244,7 @@ func Test_postgreSQL_GetRows(t *testing.T) {
 }
 
 func Test_postgreSQL_GetIndexes(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string
@@ -288,6 +295,7 @@ func Test_postgreSQL_GetIndexes(t *testing.T) {
 }
 
 func Test_postgreSQL_GetConstraints(t *testing.T) {
+	xtest.SkipUnitIfRequired(t)
 	type args struct {
 		ctx   context.Context
 		table string

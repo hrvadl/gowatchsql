@@ -21,12 +21,13 @@ import (
 
 const margin = 1
 
-type ConnectionsReppo interface {
+//go:generate mockgen -destination=mocks/mock_repo.go -package=mocks . ConnectionsRepo
+type ConnectionsRepo interface {
 	GetConnections(context.Context) []cfg.Connection
 	DeleteConnection(ctx context.Context, dsn string) error
 }
 
-func NewModel(connections ConnectionsReppo) *Model {
+func NewModel(connections ConnectionsRepo) *Model {
 	item := list.NewDefaultDelegate()
 	item.Styles = styles.NewForItemDelegate()
 	list := newList(item, []list.Item{})
@@ -48,7 +49,7 @@ type Model struct {
 	List        list.Model
 	state       state
 	newCtx      createmodal.Model
-	connections ConnectionsReppo
+	connections ConnectionsRepo
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -73,7 +74,12 @@ func (m *Model) Init() tea.Cmd {
 	return message.With(message.SelectedContext{Name: connections[0].Name, DSN: connections[0].DSN})
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	mm, cmd := m.update(msg)
+	return &mm, cmd
+}
+
+func (m Model) update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		return m.handleWindowSize(msg.Width-margin*2, msg.Height-margin*3)
@@ -104,7 +110,7 @@ func (m Model) Help() string {
 }
 
 func (m Model) handleNewContext(msg message.NewContext) (Model, tea.Cmd) {
-	m, cmd := m.handleToggleForm()
+	m, cmd := m.handleDisableForm()
 	if !msg.OK {
 		return m, cmd
 	}
@@ -168,6 +174,11 @@ func (m Model) handleDeleteContext() (Model, tea.Cmd) {
 	}
 
 	return m, m.List.SetItems(slices.Delete(items, idx, idx+1))
+}
+
+func (m Model) handleDisableForm() (Model, tea.Cmd) {
+	m.state.formActive = false
+	return m, message.With(message.UnblockCommandLine{})
 }
 
 func (m Model) handleToggleForm() (Model, tea.Cmd) {
