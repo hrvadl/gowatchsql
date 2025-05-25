@@ -13,7 +13,12 @@ const (
 	Unit        = "unit"
 	Integration = "integration"
 	System      = "system"
+	Validation  = "validation"
 )
+
+func SkipValidationIfRequired(t *testing.T) {
+	SkipIfRequired(t, Validation)
+}
 
 func SkipSystemIfRequired(t *testing.T) {
 	SkipIfRequired(t, System)
